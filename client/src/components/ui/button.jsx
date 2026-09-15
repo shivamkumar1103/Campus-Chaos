@@ -3,23 +3,33 @@ import { Slot } from '@radix-ui/react-slot';
 import { cva } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
+/**
+ * Maximalist brutal buttons.
+ * Default = invert-on-hover. Active = pressed (shadow collapses).
+ * Focus = 3px hyper/acid outline (see index.css).
+ */
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+  'brutal-sm invert-hover inline-flex cursor-pointer items-center justify-center gap-2 font-display text-[13px] font-extrabold tracking-[0.08em] whitespace-nowrap uppercase disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow hover:bg-primary/90',
-        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
-        outline: 'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
-        secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+        default: 'bg-acid text-obsidian hover:bg-hyper hover:text-white dark:bg-acid dark:text-obsidian dark:hover:bg-hyper dark:hover:text-white',
+        hyper: 'bg-hyper text-white hover:bg-ink hover:text-cream dark:hover:bg-acid dark:hover:text-obsidian',
+        cobalt: 'bg-cobalt text-white hover:bg-tang',
+        tang: 'bg-tang text-white hover:bg-acid hover:text-obsidian',
+        sun: 'bg-sun text-ink hover:bg-ink hover:text-cream dark:hover:bg-hyper dark:hover:text-white',
+        ink: 'bg-ink text-cream hover:bg-hyper hover:text-white dark:bg-cream dark:text-ink dark:hover:bg-hyper dark:hover:text-white',
+        paper: 'bg-paper text-ink hover:bg-hyper hover:text-white dark:bg-void dark:text-cream',
+        outline: 'bg-transparent hover:bg-acid hover:text-obsidian',
+        ghost: 'border-transparent shadow-none hover:bg-sun hover:text-ink',
+        destructive: 'bg-hyper text-white hover:bg-ink hover:text-cream',
+        link: 'border-0 shadow-none underline underline-offset-4 hover:bg-transparent hover:text-hyper',
       },
       size: {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-10 rounded-md px-8',
-        icon: 'h-9 w-9',
+        default: 'px-4 py-2.5',
+        sm: 'px-3 py-1.5 text-xs',
+        lg: 'px-7 py-3.5 text-sm',
+        icon: 'size-10 p-0',
       },
     },
     defaultVariants: { variant: 'default', size: 'default' },

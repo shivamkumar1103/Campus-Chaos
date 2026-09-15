@@ -1,6 +1,6 @@
 import { cn } from '../../../lib/utils';
 
-// Shared 1-on-1 user row: avatar initial + name + details + online dot.
+// Shared 1-on-1 user row: brutal hover invert, active = ink/acid.
 export function UserRow({ user, online, active, unread, subtitle, onClick }) {
   const id = user._id?.toString?.() ?? user._id;
   return (
@@ -8,30 +8,30 @@ export function UserRow({ user, online, active, unread, subtitle, onClick }) {
       key={id}
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-accent',
-        active && 'bg-accent'
+        'flex w-full cursor-pointer items-center gap-3 border-2 border-transparent p-2 text-left transition-all hover:-translate-y-px hover:border-[var(--ink-line)] hover:bg-sun hover:text-ink hover:shadow-[3px_3px_0_0_var(--shadow-color)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
+        active && 'border-[var(--ink-line)] bg-ink text-cream shadow-[3px_3px_0_0_var(--shadow-color)] dark:bg-acid dark:text-obsidian'
       )}
     >
-      <span className="relative flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold">
+      <span className="brutal-flat relative flex size-9 shrink-0 items-center justify-center bg-cobalt font-display text-sm font-extrabold text-white">
         {user.name?.charAt(0)?.toUpperCase() ?? '?'}
         <span
           className={cn(
-            'absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background',
-            online ? 'bg-green-500' : 'bg-muted-foreground/40'
+            'absolute -right-1 -bottom-1 size-3 border-2 border-[var(--ink-line)]',
+            online ? 'bg-mint' : 'bg-hyper'
           )}
         />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-medium">{user.name}</span>
+          <span className="truncate text-sm font-bold">{user.name}</span>
           {unread > 0 && (
-            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] text-primary-foreground">
+            <span className="brutal-flat flex min-w-5 items-center justify-center bg-hyper px-1 py-px font-mono text-[11px] font-bold text-white animate-blink">
               {unread}
             </span>
           )}
         </span>
-        <span className="block truncate text-xs text-muted-foreground">
-          {subtitle ?? [user.usn, user.department, user.role].filter(Boolean).join(' • ')}
+        <span className={cn('block truncate font-mono text-[10px] tracking-wider uppercase', active ? 'opacity-80' : 'opacity-60')}>
+          {online ? '● online — ' : '○ offline — '}{subtitle ?? [user.usn, user.department, user.role].filter(Boolean).join(' • ')}
         </span>
       </span>
     </button>

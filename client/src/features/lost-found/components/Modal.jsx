@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
-// Minimal shadcn-style modal (fixed overlay + panel). No extra deps.
 export function Modal({ open, onClose, children, className, label }) {
   useEffect(() => {
     if (!open) return;
@@ -18,23 +17,23 @@ export function Modal({ open, onClose, children, className, label }) {
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-[2px]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={label}
     >
       <div
-        className={cn('max-h-[90vh] w-full max-w-lg overflow-auto rounded-xl border bg-background p-6 shadow-lg', className)}
+        className={cn('brutal-lg max-h-[90vh] w-full max-w-lg overflow-auto bg-paper p-0 text-ink dark:bg-obsidian dark:text-cream', className)}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-semibold leading-none tracking-tight">{label}</h2>
-          <button onClick={onClose} aria-label="Close" className="rounded p-1 hover:bg-accent">
+        <div className="flex items-center justify-between gap-2 border-b-[3px] border-[var(--ink-line)] bg-acid p-4 text-obsidian">
+          <h2 className="font-display text-base leading-none font-extrabold tracking-tight uppercase">{label}</h2>
+          <button onClick={onClose} aria-label="Close" className="brutal-flat cursor-pointer bg-ink p-1.5 text-cream hover:bg-hyper hover:text-white">
             <X className="size-4" />
           </button>
         </div>
-        {children}
+        <div className="p-5">{children}</div>
       </div>
     </div>
   );

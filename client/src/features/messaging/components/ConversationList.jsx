@@ -5,7 +5,7 @@ export function ConversationList({ conversations, activeId, onlineIds, onPick })
   const online = new Set((onlineIds ?? []).map(String));
 
   if (!conversations?.length) {
-    return <p className="p-2 text-xs text-muted-foreground">No chats yet — find someone in People to start.</p>;
+    return <p className="brutal-flat bg-sun/40 p-2.5 font-mono text-[11px] font-bold tracking-widest text-ink uppercase">No chats yet — hit People → start one.</p>;
   }
 
   return (

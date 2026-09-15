@@ -10,7 +10,6 @@ import { buildConversationId } from '../api/chatApi';
 import { MessageBubble } from './MessageBubble';
 import { cn } from '../../../lib/utils';
 
-// 1-on-1 chat window with one peer: REST history + live socket messages.
 export function ChatWindow({ peer }) {
   const { user } = useAuth();
   const { socket, onlineUserIds } = useSocket();
@@ -25,7 +24,6 @@ export function ChatWindow({ peer }) {
   const { data: history } = useChatHistory(peerId);
   const online = (onlineUserIds ?? []).map(String).includes(String(peerId));
 
-  // Reset live buffer + mark read when switching peers.
   useEffect(() => {
     setLive([]);
     setTypingFrom(null);
@@ -34,7 +32,6 @@ export function ChatWindow({ peer }) {
     }
   }, [socket, myId, peerId]);
 
-  // Live socket events for this peer.
   useEffect(() => {
     if (!socket || !peerId) return;
     const relevant = (msg) =>
@@ -68,8 +65,9 @@ export function ChatWindow({ peer }) {
 
   if (!peer) {
     return (
-      <div className="flex h-full items-center justify-center rounded-xl border bg-card p-8 text-sm text-muted-foreground">
-        Pick a chat or search someone to start messaging.
+      <div className="brutal flex min-h-[420px] flex-col items-center justify-center gap-2 bg-sun p-8 text-center text-ink">
+        <p className="font-display text-2xl font-extrabold uppercase">Pick a fighter</p>
+        <p className="font-mono text-[11px] font-bold tracking-widest uppercase opacity-70">Chats ← or — People + search → start a DM</p>
       </div>
     );
   }
@@ -93,22 +91,22 @@ export function ChatWindow({ peer }) {
   const messages = [...(history ?? []), ...live.filter((m) => !seen.has(m._id))];
 
   return (
-    <div className="flex h-full min-h-[420px] flex-col rounded-xl border bg-card">
-      <div className="flex items-center gap-3 border-b p-3">
-        <span className="relative flex size-9 items-center justify-center rounded-full bg-secondary text-sm font-semibold">
+    <div className="brutal flex h-full min-h-[420px] flex-col bg-paper text-ink dark:bg-obsidian dark:text-cream">
+      <div className="flex items-center gap-3 border-b-[3px] border-[var(--ink-line)] bg-cobalt p-3 text-white">
+        <span className="brutal-flat relative flex size-10 items-center justify-center bg-acid font-display text-base font-extrabold text-obsidian">
           {peer.name?.charAt(0)?.toUpperCase()}
-          <span className={cn('absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background', online ? 'bg-green-500' : 'bg-muted-foreground/40')} />
+          <span className={cn('absolute -right-1 -bottom-1 size-3 border-2 border-[var(--ink-line)]', online ? 'bg-mint animate-blink' : 'bg-hyper')} />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{peer.name}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {[peer.usn, peer.department, peer.role].filter(Boolean).join(' • ')} {online ? '• online' : '• offline'}
+          <p className="truncate font-display text-sm font-extrabold tracking-wide uppercase">{peer.name}</p>
+          <p className="truncate font-mono text-[10px] tracking-widest uppercase opacity-80">
+            {[peer.usn, peer.department, peer.role].filter(Boolean).join(' • ')} {online ? '• ● online' : '• ○ offline'}
           </p>
         </div>
-        {typingFrom && <Badge variant="secondary" className="ml-auto">typing...</Badge>}
+        {typingFrom && <Badge variant="default" className="ml-auto animate-pulse">typing…</Badge>}
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="halftone flex-1 space-y-2.5 overflow-y-auto bg-cream p-3 text-ink dark:bg-void dark:text-cream">
         {messages.map((m) => (
           <MessageBubble
             key={m._id ?? `${m.createdAt}-${m.messageText}`}
@@ -117,18 +115,22 @@ export function ChatWindow({ peer }) {
             time={m.createdAt}
           />
         ))}
-        {messages.length === 0 && <p className="p-4 text-center text-xs text-muted-foreground">No messages yet — say hi.</p>}
+        {messages.length === 0 && (
+          <p className="brutal-sm mx-auto mt-6 w-fit bg-sun p-3 font-mono text-[11px] font-bold tracking-widest text-ink uppercase">
+            No messages yet — say hi. Loudly.
+          </p>
+        )}
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex gap-2 border-t p-3">
+      <div className="flex gap-2 border-t-[3px] border-[var(--ink-line)] bg-[var(--bg-2)] p-3">
         <Input
           value={text}
           onChange={onType}
           onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder={`Message ${peer.name}...`}
+          placeholder={`MESSAGE ${peer.name.toUpperCase()}...`}
         />
-        <Button onClick={send} size="icon" aria-label="Send"><Send /></Button>
+        <Button onClick={send} size="icon" variant="hyper" aria-label="Send"><Send /></Button>
       </div>
     </div>
   );
