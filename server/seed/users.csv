@@ -1,0 +1,9 @@
+_id,name,email,password,role,usn,department,avatar,createdAt,updatedAt
+66f1a1a1a1a1a1a1a1a1a1a1,Campus Admin,admin@nie.ac.in,$2a$10$KPA9TClRYzewkjC/TvK/Qetza3KYomLYl587HkniJWOLph9KnZ1US,admin,ADMIN001,Admin,,2026-01-10T09:00:00.000Z,2026-01-10T09:00:00.000Z
+66f1a1a1a1a1a1a1a1a1a1a2,Demo Teacher,teacher@nie.ac.in,$2a$10$oEfs8Denaj8CIgl9jmmPyuZrh2yNoFOtM8Ot8e01TNL5KMfDUbXJe,teacher,TCH001,CSE,,2026-01-10T09:05:00.000Z,2026-01-10T09:05:00.000Z
+66f1a1a1a1a1a1a1a1a1a1a3,Saaim Khan,2024cs_saaimkhan_c@nie.ac.in,$2a$10$oEfs8Denaj8CIgl9jmmPyuZrh2yNoFOtM8Ot8e01TNL5KMfDUbXJe,student,4NI24CS180,CSE,,2026-01-12T10:00:00.000Z,2026-01-12T10:00:00.000Z
+66f1a1a1a1a1a1a1a1a1a1a4,Shivam Kumar,2024cs_shivamkumar_c@nie.ac.in,$2a$10$oEfs8Denaj8CIgl9jmmPyuZrh2yNoFOtM8Ot8e01TNL5KMfDUbXJe,student,4NI24CS199,CSE,,2026-01-12T10:05:00.000Z,2026-01-12T10:05:00.000Z
+66f1a1a1a1a1a1a1a1a1a1a5,Shariq,2024cs_shariq_c@nie.ac.in,$2a$10$oEfs8Denaj8CIgl9jmmPyuZrh2yNoFOtM8Ot8e01TNL5KMfDUbXJe,cr,4NI24CS191,CSE,,2026-01-12T10:10:00.000Z,2026-01-12T10:10:00.000Z
+66f1a1a1a1a1a1a1a1a1a1a6,Shreyas Shanbhogue,2024cs_shreyasshanbhogueb_c@nie.ac.in,$2a$10$oEfs8Denaj8CIgl9jmmPyuZrh2yNoFOtM8Ot8e01TNL5KMfDUbXJe,student,4NI24CS206,CSE,,2026-01-12T10:15:00.000Z,2026-01-12T10:15:00.000Z
+66f1a1a1a1a1a1a1a1a1a1a7,Ananya Rao,ananya.rao@nie.ac.in,$2a$10$oEfs8Denaj8CIgl9jmmPyuZrh2yNoFOtM8Ot8e01TNL5KMfDUbXJe,student,4NI24EC045,ECE,,2026-02-01T11:00:00.000Z,2026-02-01T11:00:00.000Z
+66f1a1a1a1a1a1a1a1a1a1a8,Priya Desai,priya.desai@nie.ac.in,$2a$10$oEfs8Denaj8CIgl9jmmPyuZrh2yNoFOtM8Ot8e01TNL5KMfDUbXJe,teacher,TCH042,ISE,,2026-02-01T11:05:00.000Z,2026-02-01T11:05:00.000Z
