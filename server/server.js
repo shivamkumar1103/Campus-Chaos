@@ -13,6 +13,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const lostFoundRoutes = require('./routes/lostFoundRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const roomRoutes = require('./routes/roomRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/lost-found', lostFoundRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/rooms', roomRoutes);
 
 initChatSocket(io);
 

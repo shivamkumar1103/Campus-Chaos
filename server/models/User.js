@@ -19,9 +19,11 @@ const userSchema = new mongoose.Schema(
     },
     usn: { type: String, trim: true },
     department: { type: String, trim: true },
+    // classKey is set for CRs to identify which class/section they handle (e.g., "CSE-2A")
+    classKey: { type: String, trim: true },
     avatar: { type: String, default: "" },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 userSchema.pre("save", async function (next) {

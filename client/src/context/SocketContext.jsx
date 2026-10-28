@@ -10,7 +10,8 @@ export function SocketProvider({ children }) {
   const [onlineUserIds, setOnlineUserIds] = useState([]);
 
   useEffect(() => {
-    const url = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const defaultUrl = `${window.location.protocol}//${window.location.hostname}:5000`;
+    const url = import.meta.env.VITE_SOCKET_URL || defaultUrl;
     const s = io(url);
     setSocket(s);
     s.on('presence', (ids) => setOnlineUserIds(ids));

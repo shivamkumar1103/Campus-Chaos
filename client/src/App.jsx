@@ -11,6 +11,7 @@ import { AuthRouteElements } from './features/auth/routes/AuthRoutes';
 import { Hero } from './components/design/Hero';
 import { BentoGrid } from './components/design/BentoGrid';
 import { ChaosDashboard } from './components/design/ChaosDashboard';
+import { RoomsPage } from './features/rooms/RoomsPage';
 import { Ticker } from './components/design/kinetic';
 import api from './utils/api';
 
@@ -83,7 +84,7 @@ function AppShell() {
             path="/messages"
             element={<ChatLayout initialPeer={activeChatPeer} onPeerConsumed={() => setActiveChatPeer(null)} />}
           />
-          <Route path="/rooms" element={<Placeholder title="Room raids" text="Room & Lab tracker — timetable + CR cancel + faculty booking go here." />} />
+          <Route path="/rooms" element={<RoomsPage />} />
           <Route path="/polls" element={<Placeholder title="Vote loud" text="Polls / CR elections — flash polls + live tally go here." />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -18,10 +18,25 @@ const protect = async (req, res, next) => {
 };
 
 const authorize = (...roles) => (req, res, next) => {
-  if (!roles.includes(req.user.role)) {
-    return res.status(403).json({ message: `Role ${req.user.role} not allowed` });
+  if (!roles.includes(req.user?.role)) {
+    return res.status(403).json({ message: `Role ${req.user?.role} not allowed` });
   }
   next();
 };
 
-module.exports = { protect, authorize, COOKIE_NAME };
+const optionalAuth = async (req, res, next) => {
+  const token = req.cookies?.[COOKIE_NAME];
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev_secret');
+    req.user = await User.findById(decoded.id).select('-password');
+  } catch (err) {
+    req.user = null;
+  }
+  next();
+};
+
+module.exports = { protect, authorize, optionalAuth, COOKIE_NAME };

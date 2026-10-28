@@ -5,7 +5,8 @@ export const resolveImageUrl = (url) => {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
   const apiUrl = import.meta.env.VITE_API_URL || '';
-  const origin = apiUrl.replace(/\/api\/?$/, '') || 'http://localhost:5000';
+  const fallbackOrigin = `${window.location.protocol}//${window.location.hostname}:5000`;
+  const origin = apiUrl.replace(/\/api\/?$/, '') || fallbackOrigin;
   return `${origin}${url.startsWith('/') ? url : `/${url}`}`;
 };
 
