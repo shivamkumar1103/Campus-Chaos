@@ -5,6 +5,8 @@ const LostFoundItem = require('../models/LostFoundItem');
 const Room = require('../models/Room');
 const TimetableEntry = require('../models/TimetableEntry');
 const RoomBooking = require('../models/RoomBooking');
+const Poll = require('../models/Poll');
+const Vote = require('../models/Vote');
 
 const run = async () => {
   const uri = process.env.MONGO_URI;
@@ -20,16 +22,18 @@ const run = async () => {
   await Room.deleteMany({});
   await TimetableEntry.deleteMany({});
   await RoomBooking.deleteMany({});
+  await Poll.deleteMany({});
+  await Vote.deleteMany({});
 
   // 1. Create Core Users (Admins, Students, CRs, Teachers)
   const userData = [
     // Admin
     { name: 'Campus Admin', email: 'admin@nie.ac.in', password: 'admin123', role: 'admin', usn: 'ADMIN001', department: 'Admin' },
     
-    // Students
-    { name: 'Saaim Khan', email: '2024cs_saaimkhan_c@nie.ac.in', password: 'password123', role: 'student', usn: '4NI24CS180', department: 'CSE' },
-    { name: 'Shivam Kumar', email: '2024cs_shivamkumar_c@nie.ac.in', password: 'password123', role: 'student', usn: '4NI24CS199', department: 'CSE' },
-    { name: 'Shreyas Shanbhogue', email: '2024cs_shreaysshanbhogueb_c@nie.ac.in', password: 'password123', role: 'student', usn: '4NI24CS206', department: 'CSE' },
+    // Students (CSE-5A)
+    { name: 'Saaim Khan', email: '2024cs_saaimkhan_c@nie.ac.in', password: 'password123', role: 'student', usn: '4NI24CS180', department: 'CSE', classKey: 'CSE-5A' },
+    { name: 'Shivam Kumar', email: '2024cs_shivamkumar_c@nie.ac.in', password: 'password123', role: 'student', usn: '4NI24CS199', department: 'CSE', classKey: 'CSE-5A' },
+    { name: 'Shreyas Shanbhogue', email: '2024cs_shreaysshanbhogueb_c@nie.ac.in', password: 'password123', role: 'student', usn: '4NI24CS206', department: 'CSE', classKey: 'CSE-5A' },
     
     // Class Representatives (CRs) for 5th Sem
     { name: 'CR CSE-5A', email: 'cr_cse5a@nie.ac.in', password: 'password123', role: 'cr', usn: '4NI22CS001', department: 'CSE', classKey: 'CSE-5A' },
@@ -351,9 +355,61 @@ const run = async () => {
   await TimetableEntry.insertMany(timetable);
   console.log(`Inserted ${timetable.length} Timetable entries for 5th Sem CSE & AIML.`);
 
+  // 4. Seed Interactive Polls (CR Election + Campus Flash Poll)
+  const adminUser = userMap['Campus Admin'];
+  const saaim = userMap['Saaim Khan'];
+  const shivam = userMap['Shivam Kumar'];
+  const shreyas = userMap['Shreyas Shanbhogue'];
+
+  const electionExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000); // 3 days
+  const flashExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
+
+  const pollsToInsert = [
+    {
+      title: "5th Sem CSE-5A Class Representative (CR) Election",
+      description: "Official section-wide election for CSE-5A student leadership. Restricted to verified CSE-5A cadets.",
+      type: "election",
+      targetScope: "class",
+      classKey: "CSE-5A",
+      department: "CSE",
+      createdBy: adminUser._id,
+      expiresAt: electionExpiry,
+      status: "active",
+      isAnonymous: true,
+      options: [
+        { text: "Saaim Khan (4NI24CS180)", candidateId: saaim._id, votesCount: 0 },
+        { text: "Shivam Kumar (4NI24CS199)", candidateId: shivam._id, votesCount: 0 },
+        { text: "Shreyas Shanbhogue (4NI24CS206)", candidateId: shreyas._id, votesCount: 0 },
+      ],
+      totalVotes: 0,
+    },
+    {
+      title: "Saturday Mysore Hackfest — Pick the Night Fuel Food Drop!",
+      description: "Campus-wide student vote to decide the midnight canteen delivery sponsored for hackathon hackers.",
+      type: "flash",
+      targetScope: "campus",
+      department: "",
+      classKey: "",
+      createdBy: adminUser._id,
+      expiresAt: flashExpiry,
+      status: "active",
+      isAnonymous: true,
+      options: [
+        { text: "Spicy Mysore Masala Dosa + Filter Coffee ☕", votesCount: 0 },
+        { text: "Paneer Tikka Rolls + Iced Caramel Latte 🌯", votesCount: 0 },
+        { text: "Crispy Cheese Vada Pav + Cold Bournvita ⚡", votesCount: 0 },
+      ],
+      totalVotes: 0,
+    },
+  ];
+
+  await Poll.insertMany(pollsToInsert);
+  console.log(`Seeded ${pollsToInsert.length} Interactive Polls & CR Elections.`);
+
   console.log('\n--- SEED COMPLETE ---');
   console.log('Total Rooms:', Object.keys(roomMap).length);
   console.log('Total Timetable Entries:', timetable.length);
+  console.log('Total Polls:', pollsToInsert.length);
   process.exit(0);
 };
 

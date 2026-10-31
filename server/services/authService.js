@@ -6,6 +6,8 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
 
+const COLLEGE_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@nie\.ac\.in$/i;
+
 const toPublicUser = (u) => ({
   _id: u._id,
   name: u.name,
@@ -13,30 +15,50 @@ const toPublicUser = (u) => ({
   role: u.role,
   usn: u.usn,
   department: u.department,
+  classKey: u.classKey || '',
   avatar: u.avatar,
 });
 
-// Public signup: ALWAYS student, even if client sends role.
-const registerStudent = async ({ name, email, password, usn, department }) => {
+// Public signup: ALWAYS student, requires @nie.ac.in and permanent classKey.
+const registerStudent = async ({ name, email, password, usn, department, classKey }) => {
   if (!name || !email || !password) {
-    const err = new Error('name, email and password are required');
+    const err = new Error('Name, college email and password are required.');
     err.statusCode = 400;
     throw err;
   }
-  const exists = await userRepository.findByEmail(email);
+
+  const trimmedEmail = email.toLowerCase().trim();
+  if (!COLLEGE_EMAIL_REGEX.test(trimmedEmail)) {
+    const err = new Error('Only official college email ending with @nie.ac.in is allowed.');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!classKey || !classKey.trim()) {
+    const err = new Error('Class section (e.g. CSE-5C) is required.');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const exists = await userRepository.findByEmail(trimmedEmail);
   if (exists) {
     const err = new Error('Email already registered');
     err.statusCode = 400;
     throw err;
   }
+
+  const formattedClass = classKey.trim().toUpperCase();
+
   const user = await userRepository.create({
     name: name.trim(),
-    email: email.toLowerCase().trim(),
+    email: trimmedEmail,
     password,
-    role: 'student', // enforced
-    usn,
-    department,
+    role: 'student', // Enforced: public registration is strictly for students
+    usn: usn ? usn.trim().toUpperCase() : '',
+    department: department ? department.trim().toUpperCase() : formattedClass.split('-')[0] || 'CSE',
+    classKey: formattedClass,
   });
+
   return { token: signToken(user._id), user: toPublicUser(user) };
 };
 
@@ -65,7 +87,7 @@ const login = async ({ email, password }) => {
 // Admin-only: create teacher / cr / student (/admin).
 const ADMIN_CREATABLE_ROLES = ['student', 'teacher', 'cr', 'admin'];
 
-const createUserByAdmin = async ({ name, email, password, role, usn, department }) => {
+const createUserByAdmin = async ({ name, email, password, role, usn, department, classKey }) => {
   if (!name || !email || !password || !role) {
     const err = new Error('name, email, password and role are required');
     err.statusCode = 400;
@@ -87,8 +109,9 @@ const createUserByAdmin = async ({ name, email, password, role, usn, department 
     email: email.toLowerCase().trim(),
     password,
     role,
-    usn,
+    usn: usn ? usn.trim().toUpperCase() : '',
     department,
+    classKey: classKey ? classKey.trim().toUpperCase() : '',
   });
   return toPublicUser(user);
 };

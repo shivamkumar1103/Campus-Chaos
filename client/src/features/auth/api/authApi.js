@@ -3,8 +3,15 @@ import api from '../../../utils/api';
 // Cookie auth — server sets/clears an httpOnly cookie. Responses carry { user }, never a token.
 export const authApi = {
   // Public — always creates a student (backend enforces role)
-  register: async ({ name, email, password, usn, department }) => {
-    const { data } = await api.post('/auth/register', { name, email, password, usn, department });
+  register: async ({ name, email, password, usn, department, classKey }) => {
+    const { data } = await api.post('/auth/register', {
+      name,
+      email,
+      password,
+      usn,
+      department,
+      classKey,
+    });
     return data; // { user }
   },
   login: async ({ email, password }) => {
@@ -20,8 +27,16 @@ export const authApi = {
     return data;
   },
   // Admin-only
-  adminCreateUser: async ({ name, email, password, role, usn, department }) => {
-    const { data } = await api.post('/auth/admin/users', { name, email, password, role, usn, department });
+  adminCreateUser: async ({ name, email, password, role, usn, department, classKey }) => {
+    const { data } = await api.post('/auth/admin/users', {
+      name,
+      email,
+      password,
+      role,
+      usn,
+      department,
+      classKey,
+    });
     return data; // { user }
   },
   adminListUsers: async () => {

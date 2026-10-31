@@ -15,12 +15,15 @@ const lostFoundRoutes = require('./routes/lostFoundRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const pollRoutes = require('./routes/pollRoutes');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173', methods: ['GET', 'POST'] },
 });
+
+app.set('io', io);
 
 const PORT = process.env.PORT || 5000;
 
@@ -41,6 +44,7 @@ app.use('/api/lost-found', lostFoundRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/polls', pollRoutes);
 
 initChatSocket(io);
 

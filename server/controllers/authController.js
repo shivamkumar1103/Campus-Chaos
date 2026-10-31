@@ -23,9 +23,16 @@ const handleError = (res, err) => {
 // POST /api/auth/register — public, always creates a student
 const register = async (req, res) => {
   try {
-    const { name, email, password, usn, department } = req.body;
+    const { name, email, password, usn, department, classKey } = req.body;
     // NOTE: role is intentionally ignored — public signup is student-only.
-    const { token, user } = await authService.registerStudent({ name, email, password, usn, department });
+    const { token, user } = await authService.registerStudent({
+      name,
+      email,
+      password,
+      usn,
+      department,
+      classKey,
+    });
     setAuthCookie(res, token);
     res.status(201).json({ user });
   } catch (err) {
@@ -59,8 +66,16 @@ const me = async (req, res) => {
 // POST /api/auth/admin/users — admin only, can create teacher / cr / student / admin
 const adminCreateUser = async (req, res) => {
   try {
-    const { name, email, password, role, usn, department } = req.body;
-    const user = await authService.createUserByAdmin({ name, email, password, role, usn, department });
+    const { name, email, password, role, usn, department, classKey } = req.body;
+    const user = await authService.createUserByAdmin({
+      name,
+      email,
+      password,
+      role,
+      usn,
+      department,
+      classKey,
+    });
     res.status(201).json({ user });
   } catch (err) {
     handleError(res, err);

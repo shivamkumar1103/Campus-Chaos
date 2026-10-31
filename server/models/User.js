@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      match: [
+        /^[a-zA-Z0-9._%+-]+@nie\.ac\.in$/i,
+        "Only official college email ending with @nie.ac.in is allowed.",
+      ],
     },
     password: { type: String, required: true, minlength: 6, select: false },
     role: {
