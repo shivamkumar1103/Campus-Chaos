@@ -113,22 +113,21 @@ export function BookModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div
-        className="brutal-lg max-w-md w-full bg-card p-6 shadow-2xl relative"
-        style={{ backgroundColor: "var(--card)" }}
+        className="brutal-lg max-w-md w-full bg-card p-6 shadow-2xl relative text-foreground border-border"
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="font-display font-extrabold text-2xl uppercase text-ink">
+            <h2 className="font-display font-extrabold text-2xl uppercase text-foreground">
               Book Room {room.name}
             </h2>
-            <p className="text-muted-fg text-xs mt-1 font-mono">
+            <p className="text-muted-foreground text-xs mt-1 font-mono">
               {room.building} · Floor {room.floor === 0 ? "Ground" : room.floor} ·{" "}
               {room.type === "class" ? "Classroom" : "Laboratory"}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="font-bold text-ink opacity-60 hover:opacity-100 text-xl leading-none p-1"
+            className="font-bold text-foreground opacity-60 hover:opacity-100 text-xl leading-none p-1 cursor-pointer"
           >
             ✕
           </button>
@@ -136,7 +135,7 @@ export function BookModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1 text-ink">
+            <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-foreground opacity-90">
               Purpose / Subject
             </label>
             <Input
@@ -149,32 +148,32 @@ export function BookModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1 text-ink">
+              <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-foreground opacity-90">
                 Start Time (30m)
               </label>
               <select
                 value={startTime}
                 onChange={(e) => handleStartChange(e.target.value)}
-                className="brutal w-full py-2 px-3 text-xs font-mono font-semibold text-ink bg-card border border-border rounded"
+                className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
               >
                 {TIME_OPTIONS.slice(0, -1).map((t) => (
-                  <option key={t.value} value={t.value}>
+                  <option key={t.value} value={t.value} className="bg-paper text-ink dark:bg-void dark:text-cream">
                     {t.label}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1 text-ink">
+              <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-foreground opacity-90">
                 End Time (30m)
               </label>
               <select
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="brutal w-full py-2 px-3 text-xs font-mono font-semibold text-ink bg-card border border-border rounded"
+                className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
               >
                 {availableEndOptions.map((t) => (
-                  <option key={t.value} value={t.value}>
+                  <option key={t.value} value={t.value} className="bg-paper text-ink dark:bg-void dark:text-cream">
                     {t.label}
                   </option>
                 ))}
@@ -182,7 +181,7 @@ export function BookModal({
             </div>
           </div>
 
-          <p className="text-[11px] font-mono text-muted-fg">
+          <p className="text-[11px] font-mono text-muted-foreground">
             Date forced to today (IST). Max duration 4 hours, up to 6:00 PM.
           </p>
 

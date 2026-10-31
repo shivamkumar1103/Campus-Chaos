@@ -191,16 +191,16 @@ export function RoomsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="brutal bg-card p-6 border border-border rounded-md">
+      <div className="brutal bg-card p-6 border-border rounded-md text-foreground">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="inline-block size-3 rounded-full bg-acid animate-pulse"></span>
-              <h1 className="font-display text-3xl font-extrabold tracking-wide uppercase text-ink">
+              <h1 className="font-display text-3xl font-extrabold tracking-wide uppercase text-foreground">
                 Campus Room Availability
               </h1>
             </div>
-            <p className="mt-1 text-muted-fg text-xs font-mono">
+            <p className="mt-1 text-muted-foreground text-xs font-mono">
               Main Building · Live availability & timetable overrides for today (
               {new Date().toLocaleDateString("en-US", {
                 weekday: "long",
@@ -226,23 +226,23 @@ export function RoomsPage() {
             </Button>
 
             {/* Tab switch */}
-            <div className="flex border border-border rounded overflow-hidden">
+            <div className="flex border-2 border-border rounded overflow-hidden">
               <button
                 onClick={() => setActiveTab("all")}
-                className={`px-3 py-1.5 text-xs font-bold font-display uppercase tracking-wider transition-colors ${
+                className={`px-3 py-1.5 text-xs font-bold font-display uppercase tracking-wider transition-colors cursor-pointer ${
                   activeTab === "all"
                     ? "bg-ink text-cream dark:bg-acid dark:text-obsidian"
-                    : "bg-card text-muted-fg hover:text-ink"
+                    : "bg-card text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                 }`}
               >
                 All Rooms ({availability.length})
               </button>
               <button
                 onClick={() => setActiveTab("mine")}
-                className={`px-3 py-1.5 text-xs font-bold font-display uppercase tracking-wider transition-colors ${
+                className={`px-3 py-1.5 text-xs font-bold font-display uppercase tracking-wider transition-colors cursor-pointer ${
                   activeTab === "mine"
                     ? "bg-ink text-cream dark:bg-acid dark:text-obsidian"
-                    : "bg-card text-muted-fg hover:text-ink"
+                    : "bg-card text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                 }`}
               >
                 My Bookings
@@ -261,7 +261,7 @@ export function RoomsPage() {
           }`}
         >
           <span>{message.text}</span>
-          <button onClick={() => setMessage(null)} className="ml-2 underline">
+          <button onClick={() => setMessage(null)} className="ml-2 underline cursor-pointer">
             Dismiss
           </button>
         </div>
@@ -272,14 +272,11 @@ export function RoomsPage() {
       ) : (
         <>
           {/* Filters Section */}
-          <section
-            className="brutal p-5 bg-card border border-border rounded-md space-y-4"
-            style={{ backgroundColor: "var(--card)" }}
-          >
+          <section className="brutal p-5 bg-card border-border rounded-md space-y-4 text-foreground">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Building */}
               <div>
-                <Label className="block text-xs font-mono font-bold uppercase text-ink mb-1">
+                <Label className="block text-xs font-mono font-bold uppercase text-foreground mb-1.5 opacity-90">
                   Building
                 </Label>
                 <select
@@ -287,15 +284,15 @@ export function RoomsPage() {
                   onChange={(e) =>
                     setFilters((f) => ({ ...f, block: e.target.value }))
                   }
-                  className="brutal w-full py-2 px-3 text-xs font-mono font-semibold text-ink bg-card border border-border rounded"
+                  className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
                 >
-                  <option value="Main Building">Main Building</option>
+                  <option value="Main Building" className="bg-paper text-ink dark:bg-void dark:text-cream">Main Building</option>
                 </select>
               </div>
 
               {/* Floor */}
               <div>
-                <Label className="block text-xs font-mono font-bold uppercase text-ink mb-1">
+                <Label className="block text-xs font-mono font-bold uppercase text-foreground mb-1.5 opacity-90">
                   Floor
                 </Label>
                 <select
@@ -303,19 +300,19 @@ export function RoomsPage() {
                   onChange={(e) =>
                     setFilters((f) => ({ ...f, floor: e.target.value }))
                   }
-                  className="brutal w-full py-2 px-3 text-xs font-mono font-semibold text-ink bg-card border border-border rounded"
+                  className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
                 >
-                  <option value="">All Floors (0–3)</option>
-                  <option value="0">Ground Floor (101-109, MB, Labs)</option>
-                  <option value="1">1st Floor (201-209)</option>
-                  <option value="2">2nd Floor (301-310)</option>
-                  <option value="3">3rd Floor (401-410)</option>
+                  <option value="" className="bg-paper text-ink dark:bg-void dark:text-cream">All Floors (0–3)</option>
+                  <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (101-109, MB, Labs)</option>
+                  <option value="1" className="bg-paper text-ink dark:bg-void dark:text-cream">1st Floor (201-209)</option>
+                  <option value="2" className="bg-paper text-ink dark:bg-void dark:text-cream">2nd Floor (301-310)</option>
+                  <option value="3" className="bg-paper text-ink dark:bg-void dark:text-cream">3rd Floor (401-410)</option>
                 </select>
               </div>
 
               {/* Type */}
               <div>
-                <Label className="block text-xs font-mono font-bold uppercase text-ink mb-1">
+                <Label className="block text-xs font-mono font-bold uppercase text-foreground mb-1.5 opacity-90">
                   Room Type
                 </Label>
                 <select
@@ -323,26 +320,26 @@ export function RoomsPage() {
                   onChange={(e) =>
                     setFilters((f) => ({ ...f, type: e.target.value }))
                   }
-                  className="brutal w-full py-2 px-3 text-xs font-mono font-semibold text-ink bg-card border border-border rounded"
+                  className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
                 >
-                  <option value="">All Types (Class & Lab)</option>
-                  <option value="class">Classroom Only</option>
-                  <option value="lab">Laboratory Only</option>
+                  <option value="" className="bg-paper text-ink dark:bg-void dark:text-cream">All Types (Class & Lab)</option>
+                  <option value="class" className="bg-paper text-ink dark:bg-void dark:text-cream">Classroom Only</option>
+                  <option value="lab" className="bg-paper text-ink dark:bg-void dark:text-cream">Laboratory Only</option>
                 </select>
               </div>
 
               {/* Start Time (Half-hour steps) */}
               <div>
-                <Label className="block text-xs font-mono font-bold uppercase text-ink mb-1">
+                <Label className="block text-xs font-mono font-bold uppercase text-foreground mb-1.5 opacity-90">
                   Start Time (30m)
                 </Label>
                 <select
                   value={filters.start}
                   onChange={(e) => handleStartChange(e.target.value)}
-                  className="brutal w-full py-2 px-3 text-xs font-mono font-semibold text-ink bg-card border border-border rounded"
+                  className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
                 >
                   {TIME_OPTIONS.slice(0, -1).map((t) => (
-                    <option key={t.value} value={t.value}>
+                    <option key={t.value} value={t.value} className="bg-paper text-ink dark:bg-void dark:text-cream">
                       {t.label}
                     </option>
                   ))}
@@ -351,7 +348,7 @@ export function RoomsPage() {
 
               {/* End Time (Half-hour steps, strictly > start) */}
               <div>
-                <Label className="block text-xs font-mono font-bold uppercase text-ink mb-1">
+                <Label className="block text-xs font-mono font-bold uppercase text-foreground mb-1.5 opacity-90">
                   End Time (30m)
                 </Label>
                 <select
@@ -359,10 +356,10 @@ export function RoomsPage() {
                   onChange={(e) =>
                     setFilters((f) => ({ ...f, end: e.target.value }))
                   }
-                  className="brutal w-full py-2 px-3 text-xs font-mono font-semibold text-ink bg-card border border-border rounded"
+                  className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
                 >
                   {availableEndOptions.map((t) => (
-                    <option key={t.value} value={t.value}>
+                    <option key={t.value} value={t.value} className="bg-paper text-ink dark:bg-void dark:text-cream">
                       {t.label}
                     </option>
                   ))}
@@ -371,8 +368,8 @@ export function RoomsPage() {
             </div>
 
             {/* Quick Period Presets */}
-            <div className="pt-2 border-t border-border flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-mono font-bold text-muted-fg uppercase flex items-center gap-1 mr-1">
+            <div className="pt-3 border-t border-border flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-mono font-bold text-muted-foreground uppercase flex items-center gap-1 mr-1">
                 <Sparkles className="size-3 text-acid" /> Quick Periods:
               </span>
               {PERIOD_PRESETS.map((p) => {
@@ -389,10 +386,10 @@ export function RoomsPage() {
                         end: p.end,
                       }))
                     }
-                    className={`px-2.5 py-1 rounded text-[11px] font-mono font-semibold transition-all border ${
+                    className={`px-2.5 py-1 rounded text-[11px] font-mono font-bold cursor-pointer transition-all border ${
                       isActive
-                        ? "bg-acid text-obsidian border-acid font-bold"
-                        : "bg-black/5 dark:bg-white/5 border-border text-muted-fg hover:text-ink hover:border-ink"
+                        ? "bg-acid text-obsidian border-acid"
+                        : "bg-paper text-ink border-border hover:border-foreground dark:bg-void dark:text-cream dark:border-border dark:hover:bg-grape"
                     }`}
                   >
                     {p.label}
@@ -402,15 +399,15 @@ export function RoomsPage() {
             </div>
 
             {/* Status bar */}
-            <div className="flex flex-wrap items-center justify-between text-[11px] font-mono text-muted-fg pt-1">
+            <div className="flex flex-wrap items-center justify-between text-[11px] font-mono text-muted-foreground pt-1">
               <span>
-                Filtering: <strong className="text-ink">{filters.start}</strong>{" "}
-                to <strong className="text-ink">{filters.end}</strong>
+                Filtering: <strong className="text-foreground">{filters.start}</strong>{" "}
+                to <strong className="text-foreground">{filters.end}</strong>
                 {filters.floor !== "" && (
-                  <> · Floor: <strong className="text-ink">{filters.floor === "0" ? "Ground" : filters.floor}</strong></>
+                  <> · Floor: <strong className="text-foreground">{filters.floor === "0" ? "Ground" : filters.floor}</strong></>
                 )}
                 {filters.type && (
-                  <> · Type: <strong className="text-ink">{filters.type === "class" ? "Classroom" : "Lab"}</strong></>
+                  <> · Type: <strong className="text-foreground">{filters.type === "class" ? "Classroom" : "Lab"}</strong></>
                 )}
               </span>
               <span className="flex items-center gap-3">
@@ -428,7 +425,7 @@ export function RoomsPage() {
 
           {/* Rooms Grid */}
           {isLoading ? (
-            <div className="p-12 text-center text-muted-fg font-mono flex items-center justify-center">
+            <div className="p-12 text-center text-muted-foreground font-mono flex items-center justify-center">
               <Loader2 className="size-6 animate-spin mr-2" />
               Scanning room availability...
             </div>
@@ -438,13 +435,13 @@ export function RoomsPage() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="inline-block size-2.5 rounded-full bg-acid"></span>
-                  <h2 className="font-display font-extrabold text-lg text-ink uppercase tracking-wide">
+                  <h2 className="font-display font-extrabold text-lg text-foreground uppercase tracking-wide">
                     Available Rooms ({freeRooms.length})
                   </h2>
                 </div>
 
                 {freeRooms.length === 0 ? (
-                  <p className="text-xs font-mono text-muted-fg p-4 brutal bg-card rounded border border-border">
+                  <p className="text-xs font-mono text-muted-foreground p-4 brutal bg-card rounded border-border">
                     No free rooms found for this slot and filter criteria.
                   </p>
                 ) : (
@@ -465,13 +462,13 @@ export function RoomsPage() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="inline-block size-2.5 rounded-full bg-hyper"></span>
-                  <h2 className="font-display font-extrabold text-lg text-ink uppercase tracking-wide">
+                  <h2 className="font-display font-extrabold text-lg text-foreground uppercase tracking-wide">
                     Occupied Rooms ({occupiedRooms.length})
                   </h2>
                 </div>
 
                 {occupiedRooms.length === 0 ? (
-                  <p className="text-xs font-mono text-muted-fg p-4 brutal bg-card rounded border border-border">
+                  <p className="text-xs font-mono text-muted-foreground p-4 brutal bg-card rounded border-border">
                     No rooms are occupied in this slot.
                   </p>
                 ) : (
