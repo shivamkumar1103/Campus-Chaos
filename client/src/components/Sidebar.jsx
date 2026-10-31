@@ -77,7 +77,7 @@ function SidebarBody({ backendStatus, onNavigate }) {
         ))}
         {isAdmin && (
           <NavLink
-            to="/admin/users"
+            to="/admin"
             onClick={onNavigate}
             className={({ isActive }) =>
               cn(

@@ -14,6 +14,7 @@ const userRoutes = require('./routes/userRoutes');
 const lostFoundRoutes = require('./routes/lostFoundRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -39,6 +40,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/lost-found', lostFoundRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/admin', adminRoutes);
 
 initChatSocket(io);
 

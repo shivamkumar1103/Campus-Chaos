@@ -1,10 +1,10 @@
-import { Route } from 'react-router-dom';
+import { Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage';
 import { SignupPage } from '../pages/SignupPage';
-import { AdminUsersPage } from '../pages/AdminUsersPage';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { AdminDashboard } from '../../admin/pages/AdminDashboard';
 
-// Single source of truth for auth routes.
+// Single source of truth for auth & admin routes.
 // Rendered inside App's <Routes> — do NOT wrap in its own <Routes>.
 export function AuthRouteElements() {
   return (
@@ -12,12 +12,16 @@ export function AuthRouteElements() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route
-        path="/admin/users"
+        path="/admin"
         element={
           <ProtectedRoute roles={['admin']}>
-            <AdminUsersPage />
+            <AdminDashboard />
           </ProtectedRoute>
         }
+      />
+      <Route
+        path="/admin/users"
+        element={<Navigate to="/admin?tab=users" replace />}
       />
     </>
   );
