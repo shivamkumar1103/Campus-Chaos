@@ -10,6 +10,10 @@ const findById = (id) => User.findById(id).select('-password');
 
 const findByIdWithPassword = (id) => User.findById(id).select('+password');
 
+const findByIds = (ids, select = 'name email usn role avatar') => {
+  return User.find({ _id: { $in: ids } }).select(select);
+};
+
 const findByVerificationToken = (hashedToken) => {
   return User.findOne({
     verificationToken: hashedToken,
@@ -33,6 +37,7 @@ module.exports = {
   findByEmail,
   findById,
   findByIdWithPassword,
+  findByIds,
   findByVerificationToken,
   create,
   listAll,
