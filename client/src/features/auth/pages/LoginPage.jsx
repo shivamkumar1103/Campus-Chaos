@@ -1,9 +1,18 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { LoginForm } from '../components/LoginForm';
 import { Ticker } from '../../../components/design/kinetic';
+import { useAuth } from '../../../context/AuthContext';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isLoading } = useAuth();
+  const from = location.state?.from || '/';
+
+  if (!isLoading && user) {
+    return <Navigate to={from} replace />;
+  }
+
   return (
     <div className="mx-auto flex min-h-[80vh] w-full max-w-4xl flex-col items-center justify-center gap-4 p-4">
       <Ticker
@@ -16,7 +25,7 @@ export function LoginPage() {
           <p className="mt-6 font-mono text-[11px] tracking-[0.2em] uppercase opacity-70">Lost items pile up.<br />DMs go unanswered.<br />Don&apos;t let it happen.</p>
           <div className="halftone mt-6 h-16 opacity-30" />
         </div>
-        <LoginForm onSuccess={() => navigate('/')} />
+        <LoginForm onSuccess={() => navigate(from, { replace: true })} />
       </div>
       <p className="brutal-sm bg-paper px-3 py-2 font-mono text-[11px] font-bold tracking-widest text-ink uppercase dark:bg-void dark:text-cream">
         No account? <Link className="bg-acid px-1 text-obsidian underline underline-offset-4" to="/signup">Sign up as student →</Link>

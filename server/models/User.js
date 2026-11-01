@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     verificationToken: { type: String, select: false },
     verificationExpires: { type: Date, select: false },
+    passwordChangedAt: { type: Date, select: false },
   },
   { timestamps: true }
 );
@@ -38,11 +39,22 @@ userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  if (!this.isNew) {
+    this.passwordChangedAt = Date.now() - 1000;
+  }
   next();
 });
 
 userSchema.methods.comparePassword = function (candidate) {
   return bcrypt.compare(candidate, this.password);
+};
+
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+    return JWTTimestamp < changedTimestamp;
+  }
+  return false;
 };
 
 userSchema.methods.createEmailVerificationToken = function () {
