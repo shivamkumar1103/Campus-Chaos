@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema(
   {
@@ -26,6 +27,9 @@ const userSchema = new mongoose.Schema(
     // classKey is set for CRs to identify which class/section they handle (e.g., "CSE-2A")
     classKey: { type: String, trim: true },
     avatar: { type: String, default: "" },
+    isVerified: { type: Boolean, default: false },
+    verificationToken: { type: String, select: false },
+    verificationExpires: { type: Date, select: false },
   },
   { timestamps: true }
 );
@@ -41,6 +45,17 @@ userSchema.methods.comparePassword = function (candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
+userSchema.methods.createEmailVerificationToken = function () {
+  const token = crypto.randomBytes(32).toString("hex");
+  this.verificationToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+  this.verificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24h
+  return token;
+};
+
 userSchema.index({ usn: 1 });
+userSchema.index({ verificationToken: 1 });
 
 module.exports = mongoose.model("User", userSchema);

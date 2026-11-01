@@ -1,6 +1,7 @@
 import { Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage';
 import { SignupPage } from '../pages/SignupPage';
+import { VerifyEmailPage } from '../pages/VerifyEmailPage';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { AdminDashboard } from '../../admin/pages/AdminDashboard';
 
@@ -11,6 +12,8 @@ export function AuthRouteElements() {
     <>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
       <Route
         path="/admin"
         element={

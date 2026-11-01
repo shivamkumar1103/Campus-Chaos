@@ -71,7 +71,7 @@ const run = async () => {
 
   const userMap = {};
   for (const u of userData) {
-    const created = await User.create(u);
+    const created = await User.create({ ...u, isVerified: true });
     userMap[u.name] = created;
     userMap[u.email] = created;
   }

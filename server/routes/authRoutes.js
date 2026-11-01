@@ -1,11 +1,23 @@
 const express = require('express');
-const { register, login, logout, me, adminCreateUser, adminListUsers } = require('../controllers/authController');
+const {
+  register,
+  login,
+  logout,
+  me,
+  verifyEmail,
+  resendVerification,
+  adminCreateUser,
+  adminListUsers,
+} = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Public — student-only signup
+// Public — student signup and email verification
 router.post('/register', register);
+router.get('/verify-email/:token', verifyEmail);
+router.get('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerification);
 router.post('/login', login);
 router.post('/logout', logout);
 

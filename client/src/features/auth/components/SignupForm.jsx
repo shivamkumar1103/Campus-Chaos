@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { useRegister } from '../hooks/useRegister';
+import { authApi } from '../api/authApi';
 import { AlertCircle, Lock, ShieldAlert } from 'lucide-react';
 
 const COLLEGE_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@nie\.ac\.in$/i;
@@ -19,6 +21,10 @@ export function SignupForm({ onSuccess }) {
     classKey: '',
   });
   const [clientError, setClientError] = useState(null);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState('');
 
   const error = clientError || register.error?.response?.data?.message;
 
@@ -45,14 +51,81 @@ export function SignupForm({ onSuccess }) {
         classKey: form.classKey.trim().toUpperCase(),
         department: form.department.trim().toUpperCase() || form.classKey.trim().split('-')[0].toUpperCase(),
       },
-      { onSuccess: () => onSuccess?.() }
+      {
+        onSuccess: (data) => {
+          if (data?.requiresVerification) {
+            setIsSuccess(true);
+            setRegisteredEmail(trimmedEmail.toLowerCase());
+          } else if (data?.user) {
+            onSuccess?.();
+          }
+        },
+      }
     );
+  };
+
+  const handleResend = async () => {
+    try {
+      setResending(true);
+      setResendStatus('');
+      const res = await authApi.resendVerification(registeredEmail);
+      setResendStatus(res.message || 'Verification link resent!');
+    } catch (err) {
+      setResendStatus(err.response?.data?.message || 'Failed to resend email');
+    } finally {
+      setResending(false);
+    }
   };
 
   const set = (k) => (e) => {
     setClientError(null);
     setForm({ ...form, [k]: e.target.value });
   };
+
+  if (isSuccess) {
+    return (
+      <Card className="w-full max-w-sm overflow-hidden border-2 border-ink">
+        <CardHeader className="bg-acid text-obsidian">
+          <p className="brutal-flat w-fit bg-obsidian px-2 py-0.5 font-mono text-[10px] font-bold tracking-[0.2em] text-acid uppercase">
+            Check Your Email
+          </p>
+          <CardTitle className="mt-2 !text-3xl">Verification Sent!</CardTitle>
+          <CardDescription className="text-obsidian/85 font-medium">
+            We sent a verification link to your inbox.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-5">
+          <div className="brutal-sm bg-paper p-3 text-sm dark:bg-void">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground font-mono">Sent to</p>
+            <p className="font-mono font-bold text-ink dark:text-cream break-all">{registeredEmail}</p>
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Click the link in the email to activate your account. Links expire after 24 hours.
+          </p>
+          {resendStatus && (
+            <p className="brutal-sm bg-sun p-2 text-xs font-bold text-ink">
+              {resendStatus}
+            </p>
+          )}
+          <div className="space-y-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full font-mono text-xs"
+              onClick={handleResend}
+              disabled={resending}
+            >
+              {resending ? 'Resending email...' : "Didn't get it? Resend link →"}
+            </Button>
+            <Link to="/login" className="block text-center text-xs font-mono font-bold text-hyper underline underline-offset-4">
+              Back to Login
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-sm overflow-hidden">
@@ -146,7 +219,7 @@ export function SignupForm({ onSuccess }) {
           )}
 
           <Button variant="hyper" size="lg" className="w-full font-mono text-xs font-bold uppercase" disabled={register.isPending}>
-            {register.isPending ? 'Creating Account...' : 'Register as Student →'}
+            {register.isPending ? 'Sending verification...' : 'Create account & verify →'}
           </Button>
 
           <p className="text-center font-mono text-[10px] text-muted-foreground">
@@ -157,4 +230,3 @@ export function SignupForm({ onSuccess }) {
     </Card>
   );
 }
-

@@ -12,7 +12,15 @@ export const authApi = {
       department,
       classKey,
     });
-    return data; // { user }
+    return data; // { message, email, requiresVerification }
+  },
+  verifyEmail: async (token) => {
+    const { data } = await api.get('/auth/verify-email', { params: { token } });
+    return data; // { message, user }
+  },
+  resendVerification: async (email) => {
+    const { data } = await api.post('/auth/resend-verification', { email });
+    return data; // { message, email }
   },
   login: async ({ email, password }) => {
     const { data } = await api.post('/auth/login', { email, password });
