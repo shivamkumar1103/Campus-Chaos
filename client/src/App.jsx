@@ -1,21 +1,21 @@
-import { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate, Link } from 'react-router-dom';
-import { ArrowUpRight, TriangleAlert } from 'lucide-react';
+import { Routes, Route, Navigate, useOutletContext, Link } from 'react-router-dom';
+import { ArrowUpRight } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { ThemeProvider } from './context/ThemeContext';
-import Sidebar from './components/Sidebar';
+import { MainLayout } from './components/MainLayout';
 import LostFoundFeed from './features/lost-found/components/LostFoundFeed';
 import ChatLayout from './features/messaging/components/ChatLayout';
 import { AuthRouteElements } from './features/auth/routes/AuthRoutes';
+import { ProtectedRoute } from './features/auth/components/ProtectedRoute';
+import { AdminUsersPage } from './features/auth/pages/AdminUsersPage';
 import { Hero } from './components/design/Hero';
 import { BentoGrid } from './components/design/BentoGrid';
 import { ChaosDashboard } from './components/design/ChaosDashboard';
 import { RoomsPage } from './features/rooms/RoomsPage';
-import { Ticker } from './components/design/kinetic';
-import api from './utils/api';
 
-function Home({ backendStatus }) {
+function Home() {
+  const { backendStatus } = useOutletContext();
   return (
     <div className="space-y-6">
       <Hero backendStatus={backendStatus} />
@@ -32,6 +32,21 @@ function Home({ backendStatus }) {
   );
 }
 
+function LostFoundRoute() {
+  const { onMessageUser } = useOutletContext();
+  return <LostFoundFeed onMessageFinder={(item) => onMessageUser?.(item.reportedBy)} />;
+}
+
+function MessagesRoute() {
+  const { activeChatPeer, setActiveChatPeer } = useOutletContext();
+  return (
+    <ChatLayout
+      initialPeer={activeChatPeer}
+      onPeerConsumed={() => setActiveChatPeer?.(null)}
+    />
+  );
+}
+
 function Placeholder({ text, title }) {
   return (
     <div className="brutal-lg bg-sun p-6 text-ink">
@@ -44,68 +59,40 @@ function Placeholder({ text, title }) {
   );
 }
 
-const AUTH_PATHS = ['/login', '/signup'];
-
-function AppShell() {
-  const [backendStatus, setBackendStatus] = useState('checking...');
-  const [activeChatPeer, setActiveChatPeer] = useState(null);
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    api
-      .get('/health')
-      .then(() => setBackendStatus('ok'))
-      .catch(() => setBackendStatus('offline (start server/)'));
-  }, []);
-
-  const onMessageUser = (reporter) => {
-    if (reporter?._id) setActiveChatPeer(reporter);
-    navigate('/messages');
-  };
-
-  const bare = AUTH_PATHS.includes(location.pathname);
-
-  return (
-    <div className="grain min-h-screen md:flex">
-      {!bare && <Sidebar backendStatus={backendStatus} />}
-      <main className="min-w-0 flex-1 px-3 py-4 sm:px-5 md:mx-auto md:w-full md:max-w-6xl md:py-6">
-        {!bare && backendStatus.startsWith('offline') && (
-          <div className="brutal-sm mb-4 flex items-center gap-2 bg-hyper p-2.5 text-[13px] font-bold text-white">
-            <TriangleAlert className="size-4 shrink-0" />
-            Backend {backendStatus} — board shows cached vibes. Run <code className="bg-black/30 px-1">cd server; npm run dev</code>
-          </div>
-        )}
-        <Routes>
-          {AuthRouteElements()}
-          <Route path="/" element={<Home backendStatus={backendStatus} />} />
-          <Route path="/lost-found" element={<LostFoundFeed onMessageFinder={(item) => onMessageUser(item.reportedBy)} />} />
-          <Route
-            path="/messages"
-            element={<ChatLayout initialPeer={activeChatPeer} onPeerConsumed={() => setActiveChatPeer(null)} />}
-          />
-          <Route path="/rooms" element={<RoomsPage />} />
-          <Route path="/polls" element={<Placeholder title="Vote loud" text="Polls / CR elections — flash polls + live tally go here." />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        {!bare && (
-          <Ticker
-            items={['CAMPUS CHAOS', 'BATCH C8', 'NIE MYSURU', 'STAY LOUD']}
-            className="brutal-sm mt-8 bg-ink py-1.5 font-mono text-[10px] font-bold tracking-[0.25em] text-cream uppercase dark:bg-void dark:text-acid"
-            slow
-          />
-        )}
-      </main>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <SocketProvider>
-          <AppShell />
+          <Routes>
+            {/* Public Authentication Routes */}
+            {AuthRouteElements()}
+
+            {/* Single Protected Route enclosing the entire application */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/lost-found" element={<LostFoundRoute />} />
+                <Route path="/messages" element={<MessagesRoute />} />
+                <Route path="/rooms" element={<RoomsPage />} />
+                <Route
+                  path="/polls"
+                  element={<Placeholder title="Vote loud" text="Polls / CR elections — flash polls + live tally go here." />}
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminUsersPage />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
+            </Route>
+
+            {/* Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </SocketProvider>
       </AuthProvider>
     </ThemeProvider>

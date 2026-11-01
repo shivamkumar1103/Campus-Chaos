@@ -2,11 +2,8 @@ import { Route } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage';
 import { SignupPage } from '../pages/SignupPage';
 import { VerifyEmailPage } from '../pages/VerifyEmailPage';
-import { AdminUsersPage } from '../pages/AdminUsersPage';
-import { ProtectedRoute } from '../components/ProtectedRoute';
 
-// Single source of truth for auth routes.
-// Rendered inside App's <Routes> — do NOT wrap in its own <Routes>.
+// Public authentication routes
 export function AuthRouteElements() {
   return (
     <>
@@ -14,14 +11,6 @@ export function AuthRouteElements() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
-      <Route
-        path="/admin/users"
-        element={
-          <ProtectedRoute roles={['admin']}>
-            <AdminUsersPage />
-          </ProtectedRoute>
-        }
-      />
     </>
   );
 }

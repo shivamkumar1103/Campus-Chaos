@@ -1,9 +1,16 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { SignupForm } from '../components/SignupForm';
 import { Ticker } from '../../../components/design/kinetic';
+import { useAuth } from '../../../context/AuthContext';
 
 export function SignupPage() {
   const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
+
+  if (!isLoading && user) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div className="mx-auto flex min-h-[80vh] w-full max-w-4xl flex-col items-center justify-center gap-4 p-4">
       <Ticker
