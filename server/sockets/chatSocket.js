@@ -1,4 +1,4 @@
-const Message = require('../models/Message');
+const messageRepository = require('../repositories/messageRepository');
 
 // userId -> socketId
 const onlineUsers = new Map();
@@ -16,8 +16,8 @@ function initChatSocket(io) {
     socket.on('send_message', async ({ senderId, receiverId, messageText }) => {
       try {
         if (!senderId || !receiverId || !messageText) return;
-        const conversationId = Message.buildConversationId(senderId, receiverId);
-        const msg = await Message.create({ senderId, receiverId, conversationId, messageText });
+        const conversationId = messageRepository.buildConversationId(senderId, receiverId);
+        const msg = await messageRepository.create({ senderId, receiverId, conversationId, messageText });
 
         const receiverSocketId = onlineUsers.get(receiverId.toString());
         if (receiverSocketId) {
@@ -42,10 +42,7 @@ function initChatSocket(io) {
 
     socket.on('mark_as_read', async ({ conversationId, readerId }) => {
       try {
-        await Message.updateMany(
-          { conversationId, receiverId: readerId, read: false },
-          { $set: { read: true } }
-        );
+        await messageRepository.markAsRead(conversationId, readerId);
       } catch {}
     });
 
