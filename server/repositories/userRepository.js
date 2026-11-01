@@ -10,6 +10,13 @@ const findById = (id) => User.findById(id).select('-password');
 
 const findByIdWithPassword = (id) => User.findById(id).select('+password');
 
+const findByVerificationToken = (hashedToken) => {
+  return User.findOne({
+    verificationToken: hashedToken,
+    verificationExpires: { $gt: Date.now() },
+  }).select('+verificationToken +verificationExpires');
+};
+
 const create = (data) => User.create(data);
 
 const listAll = () => User.find({}).select('-password').sort({ createdAt: -1 }).limit(200);
@@ -19,7 +26,15 @@ const search = (q, excludeId) => {
   const rx = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
   const filter = { $or: [{ name: rx }, { email: rx }, { usn: rx }, { department: rx }] };
   if (excludeId) filter._id = { $ne: excludeId };
-  return User.find(filter).select('name email usn department role avatar').limit(20);
+  return User.find(filter).select('name email usn department role avatar isVerified').limit(20);
 };
 
-module.exports = { findByEmail, findById, findByIdWithPassword, create, listAll, search };
+module.exports = {
+  findByEmail,
+  findById,
+  findByIdWithPassword,
+  findByVerificationToken,
+  create,
+  listAll,
+  search,
+};

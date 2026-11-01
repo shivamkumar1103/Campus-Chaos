@@ -17,17 +17,44 @@ const clearAuthCookie = (res) => res.clearCookie(COOKIE_NAME, { ...cookieOptions
 
 const handleError = (res, err) => {
   const status = err.statusCode || 500;
-  res.status(status).json({ message: err.message || 'Server error' });
+  res.status(status).json({
+    message: err.message || 'Server error',
+    requiresVerification: !!err.requiresVerification,
+    email: err.email,
+  });
 };
 
-// POST /api/auth/register — public, always creates a student
+// POST /api/auth/register — public, creates unverified student & sends verification email
 const register = async (req, res) => {
   try {
     const { name, email, password, usn, department } = req.body;
     // NOTE: role is intentionally ignored — public signup is student-only.
-    const { token, user } = await authService.registerStudent({ name, email, password, usn, department });
-    setAuthCookie(res, token);
-    res.status(201).json({ user });
+    const result = await authService.registerStudent({ name, email, password, usn, department });
+    // Note: Do NOT set auth cookie until email is verified.
+    res.status(201).json(result);
+  } catch (err) {
+    handleError(res, err);
+  }
+};
+
+// GET /api/auth/verify-email/:token (or query ?token=...)
+const verifyEmail = async (req, res) => {
+  try {
+    const token = req.params.token || req.query.token;
+    const { token: authToken, user, message } = await authService.verifyEmail(token);
+    setAuthCookie(res, authToken);
+    res.status(200).json({ message, user });
+  } catch (err) {
+    handleError(res, err);
+  }
+};
+
+// POST /api/auth/resend-verification
+const resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const result = await authService.resendVerificationEmail(email);
+    res.status(200).json(result);
   } catch (err) {
     handleError(res, err);
   }
@@ -77,4 +104,13 @@ const adminListUsers = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout, me, adminCreateUser, adminListUsers };
+module.exports = {
+  register,
+  verifyEmail,
+  resendVerification,
+  login,
+  logout,
+  me,
+  adminCreateUser,
+  adminListUsers,
+};

@@ -4,15 +4,36 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { useLogin } from '../hooks/useLogin';
+import { authApi } from '../api/authApi';
 
 export function LoginForm({ onSuccess }) {
   const login = useLogin();
   const [form, setForm] = useState({ email: '', password: '' });
-  const error = login.error?.response?.data?.message;
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState('');
+
+  const errorData = login.error?.response?.data;
+  const error = errorData?.message;
+  const requiresVerification = errorData?.requiresVerification;
 
   const submit = (e) => {
     e.preventDefault();
     login.mutate(form, { onSuccess: () => onSuccess?.() });
+  };
+
+  const handleResend = async () => {
+    const targetEmail = errorData?.email || form.email;
+    if (!targetEmail) return;
+    try {
+      setResending(true);
+      setResendStatus('');
+      const res = await authApi.resendVerification(targetEmail);
+      setResendStatus(res.message || 'Verification email resent! Check your inbox.');
+    } catch (err) {
+      setResendStatus(err.response?.data?.message || 'Failed to resend verification email.');
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -46,7 +67,26 @@ export function LoginForm({ onSuccess }) {
               required
             />
           </div>
-          {error && <p className="brutal-sm bg-hyper p-2 text-sm font-bold text-white">{error}</p>}
+          {error && (
+            <div className="brutal-sm bg-hyper p-2.5 text-sm font-bold text-white space-y-2">
+              <p>{error}</p>
+              {requiresVerification && (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resending}
+                  className="inline-block text-left text-xs underline font-mono text-white/95 hover:text-white"
+                >
+                  {resending ? 'Sending...' : '→ Click here to resend verification email'}
+                </button>
+              )}
+            </div>
+          )}
+          {resendStatus && (
+            <p className="brutal-sm bg-sun p-2 text-xs font-bold text-ink">
+              {resendStatus}
+            </p>
+          )}
           <Button className="w-full" size="lg" disabled={login.isPending}>
             {login.isPending ? 'Breaking in...' : 'Login →'}
           </Button>

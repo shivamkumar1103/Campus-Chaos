@@ -1,21 +1,95 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { useRegister } from '../hooks/useRegister';
+import { authApi } from '../api/authApi';
 
 export function SignupForm({ onSuccess }) {
   const register = useRegister();
   const [form, setForm] = useState({ name: '', email: '', password: '', usn: '', department: '' });
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState('');
+
   const error = register.error?.response?.data?.message;
 
   const submit = (e) => {
     e.preventDefault();
-    register.mutate(form, { onSuccess: () => onSuccess?.() });
+    register.mutate(form, {
+      onSuccess: (data) => {
+        if (data?.requiresVerification) {
+          setIsSuccess(true);
+          setRegisteredEmail(form.email);
+        } else if (data?.user) {
+          onSuccess?.();
+        }
+      },
+    });
+  };
+
+  const handleResend = async () => {
+    try {
+      setResending(true);
+      setResendStatus('');
+      const res = await authApi.resendVerification(registeredEmail);
+      setResendStatus(res.message || 'Verification link resent!');
+    } catch (err) {
+      setResendStatus(err.response?.data?.message || 'Failed to resend email');
+    } finally {
+      setResending(false);
+    }
   };
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  if (isSuccess) {
+    return (
+      <Card className="w-full max-w-sm overflow-hidden border-2 border-ink">
+        <CardHeader className="bg-acid text-obsidian">
+          <p className="brutal-flat w-fit bg-obsidian px-2 py-0.5 font-mono text-[10px] font-bold tracking-[0.2em] text-acid uppercase">
+            Check Your Email
+          </p>
+          <CardTitle className="mt-2 !text-3xl">Verification Sent!</CardTitle>
+          <CardDescription className="text-obsidian/85 font-medium">
+            We sent a verification link to your inbox.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-5">
+          <div className="brutal-sm bg-paper p-3 text-sm dark:bg-void">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground font-mono">Sent to</p>
+            <p className="font-mono font-bold text-ink dark:text-cream break-all">{registeredEmail}</p>
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Click the link in the email to activate your account. Links expire after 24 hours.
+          </p>
+          {resendStatus && (
+            <p className="brutal-sm bg-sun p-2 text-xs font-bold text-ink">
+              {resendStatus}
+            </p>
+          )}
+          <div className="space-y-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full font-mono text-xs"
+              onClick={handleResend}
+              disabled={resending}
+            >
+              {resending ? 'Resending email...' : 'Didn\'t get it? Resend link →'}
+            </Button>
+            <Link to="/login" className="block text-center text-xs font-mono font-bold text-hyper underline underline-offset-4">
+              Back to Login
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-sm overflow-hidden">
@@ -50,7 +124,7 @@ export function SignupForm({ onSuccess }) {
           </div>
           {error && <p className="brutal-sm bg-hyper p-2 text-sm font-bold text-white">{error}</p>}
           <Button variant="hyper" size="lg" className="w-full" disabled={register.isPending}>
-            {register.isPending ? 'Creating...' : 'Create account →'}
+            {register.isPending ? 'Sending verification...' : 'Create account & verify →'}
           </Button>
         </form>
       </CardContent>

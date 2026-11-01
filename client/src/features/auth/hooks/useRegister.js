@@ -9,8 +9,10 @@ export function useRegister() {
   return useMutation({
     mutationFn: authApi.register,
     onSuccess: (data) => {
-      setSession(data.user);
-      queryClient.setQueryData(authKeys.me, data.user);
+      if (data?.user) {
+        setSession(data.user);
+        queryClient.setQueryData(authKeys.me, data.user);
+      }
     },
   });
 }
