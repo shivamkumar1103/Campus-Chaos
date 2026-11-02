@@ -102,13 +102,17 @@ export function UserManagementTab() {
 
     setIsSubmitting(true);
     try {
+      const payload = {
+        ...formData,
+        classKey: formData.classKey ? formData.classKey.trim().toUpperCase() : "",
+        usn: formData.usn ? formData.usn.trim().toUpperCase() : "",
+      };
       if (editingUser) {
-        const payload = { ...formData };
         if (!payload.password) delete payload.password;
         await adminApi.updateUser(editingUser._id, payload);
         setMessage({ type: "success", text: `Updated ${formData.name} successfully` });
       } else {
-        await adminApi.createUser(formData);
+        await adminApi.createUser(payload);
         setMessage({ type: "success", text: `Created user ${formData.name} successfully` });
       }
       setIsCreateOpen(false);
@@ -378,20 +382,25 @@ export function UserManagementTab() {
                 </div>
               </div>
 
-              {formData.role === "cr" && (
-                <div className="p-3 bg-acid/10 border border-acid/50 rounded">
-                  <Label className="block uppercase text-foreground mb-1 font-bold text-acid">
-                    CR ClassKey (Required)
+              {(formData.role === "student" || formData.role === "cr") && (
+                <div className="p-3 bg-paper dark:bg-void border border-border rounded">
+                  <Label className="block uppercase text-foreground mb-1 font-bold text-xs flex items-center justify-between">
+                    <span>Class Section (e.g. CSE-5C)</span>
+                    {formData.role === "cr" && (
+                      <span className="text-[10px] text-acid font-black uppercase">Required for CR</span>
+                    )}
                   </Label>
                   <Input
-                    required
+                    required={formData.role === "cr"}
                     value={formData.classKey}
-                    onChange={(e) => setFormData({ ...formData, classKey: e.target.value })}
-                    placeholder="e.g. CSE-5A / AIML-5B"
-                    className="border-acid"
+                    onChange={(e) => setFormData({ ...formData, classKey: e.target.value.toUpperCase() })}
+                    placeholder="e.g. CSE-5A / CSE-5C / AIML-5B"
+                    className="font-mono text-xs uppercase"
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    Allows CR to override/cancel slots for this section only.
+                    {formData.role === "cr"
+                      ? "CR has administrative authority and voting access for this section."
+                      : "Permanent section assignment for timetable scheduling, section polls, and CR elections."}
                   </p>
                 </div>
               )}

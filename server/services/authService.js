@@ -68,6 +68,7 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
 
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const verificationUrl = `${clientUrl}/verify-email?token=${rawToken}`;
+    console.log(`\n🔗 [EMAIL VERIFICATION LINK] (${existingUser.email}):\n${verificationUrl}\n`);
 
     try {
       await new EmailUtils(existingUser, verificationUrl).sendVerificationEmail();
@@ -102,6 +103,7 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
 
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const verificationUrl = `${clientUrl}/verify-email?token=${rawToken}`;
+  console.log(`\n🔗 [EMAIL VERIFICATION LINK] (${user.email}):\n${verificationUrl}\n`);
 
   try {
     await new EmailUtils(user, verificationUrl).sendVerificationEmail();
@@ -176,6 +178,7 @@ const resendVerificationEmail = async (email) => {
 
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const verificationUrl = `${clientUrl}/verify-email?token=${rawToken}`;
+  console.log(`\n🔗 [EMAIL VERIFICATION LINK] (${user.email}):\n${verificationUrl}\n`);
 
   await new EmailUtils(user, verificationUrl).sendVerificationEmail();
 

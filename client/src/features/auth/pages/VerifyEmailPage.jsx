@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useParams, useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/authApi';
@@ -15,9 +15,17 @@ export function VerifyEmailPage() {
   const routeParams = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { setSession } = useAuth();
+  const { user: currentUser, setSession } = useAuth();
+
+  // If already logged in and verified, take them straight home
+  useEffect(() => {
+    if (currentUser?.isVerified) {
+      navigate('/', { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const token = routeParams.token || searchParams.get('token');
+  const tokenCalledRef = useRef(null);
 
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [verifiedUser, setVerifiedUser] = useState(null);
@@ -27,6 +35,7 @@ export function VerifyEmailPage() {
   const [resendEmail, setResendEmail] = useState('');
   const [resending, setResending] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
+  const [redirectCountdown, setRedirectCountdown] = useState(2);
 
   useEffect(() => {
     if (!token) {
@@ -35,32 +44,40 @@ export function VerifyEmailPage() {
       return;
     }
 
-    let isMounted = true;
+    // Prevent double execution in React StrictMode
+    if (tokenCalledRef.current === token) return;
+    tokenCalledRef.current = token;
+
     setStatus('loading');
 
     authApi
       .verifyEmail(token)
       .then((data) => {
-        if (!isMounted) return;
         setVerifiedUser(data.user);
         setStatus('success');
         if (data.user) {
           setSession(data.user);
           queryClient.setQueryData(authKeys.me, data.user);
+
+          // Automatically take verified user directly to home page (no re-login needed)
+          let count = 2;
+          const interval = setInterval(() => {
+            count -= 1;
+            setRedirectCountdown(count);
+            if (count <= 0) {
+              clearInterval(interval);
+              navigate('/', { replace: true });
+            }
+          }, 800);
         }
       })
       .catch((err) => {
-        if (!isMounted) return;
         setStatus('error');
         setErrorMessage(
           err.response?.data?.message || 'Verification link is invalid or has expired.'
         );
       });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token, setSession, queryClient]);
+  }, [token, setSession, queryClient, navigate]);
 
   const handleResend = async (e) => {
     e.preventDefault();
@@ -113,7 +130,7 @@ export function VerifyEmailPage() {
               You&apos;re In!
             </CardTitle>
             <CardDescription className="text-obsidian/85 font-medium">
-              Your email has been verified successfully. Welcome to Campus Chaos.
+              Your email has been verified successfully. Taking you directly to Campus Chaos...
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
@@ -123,15 +140,21 @@ export function VerifyEmailPage() {
                 <p><span className="text-muted-foreground">EMAIL:</span> <strong>{verifiedUser.email}</strong></p>
                 <p><span className="text-muted-foreground">ROLE:</span> <strong className="uppercase">{verifiedUser.role}</strong></p>
                 {verifiedUser.usn && <p><span className="text-muted-foreground">USN:</span> <strong>{verifiedUser.usn}</strong></p>}
+                {verifiedUser.classKey && <p><span className="text-muted-foreground">CLASS:</span> <strong>{verifiedUser.classKey}</strong></p>}
               </div>
             )}
+
+            <div className="brutal-sm bg-hyper/10 border border-hyper p-3 text-center font-mono text-xs font-bold text-hyper">
+              🚀 Redirecting to dashboard in {redirectCountdown}s...
+            </div>
+
             <Button
               variant="hyper"
               size="lg"
               className="w-full font-black text-sm tracking-wide uppercase"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/', { replace: true })}
             >
-              Enter Campus Chaos →
+              Enter Campus Chaos Now →
             </Button>
           </CardContent>
         </Card>

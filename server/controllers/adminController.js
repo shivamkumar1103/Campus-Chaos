@@ -137,9 +137,9 @@ const createUser = async (req, res) => {
       email: email.toLowerCase(),
       password,
       role: role || "student",
-      usn: usn || "",
+      usn: usn ? usn.trim().toUpperCase() : "",
       department: department || "",
-      classKey: role === "cr" ? classKey : "",
+      classKey: classKey ? classKey.trim().toUpperCase() : "",
     });
 
     const userObj = user.toObject();
@@ -161,14 +161,19 @@ const updateUser = async (req, res) => {
     if (name) user.name = name;
     if (role) {
       user.role = role;
-      if (role === "cr") {
-        user.classKey = classKey || user.classKey || "";
-      } else {
-        user.classKey = "";
+      if (role === "cr" && !classKey && !user.classKey) {
+        return res.status(400).json({ message: "classKey (e.g. CSE-5A) is required for CR role" });
+      }
+      if (role === "teacher" || role === "admin") {
+        if (!classKey) user.classKey = "";
       }
     }
-    if (classKey && user.role === "cr") user.classKey = classKey;
-    if (usn !== undefined) user.usn = usn;
+
+    if (classKey !== undefined) {
+      user.classKey = classKey ? classKey.trim().toUpperCase() : "";
+    }
+
+    if (usn !== undefined) user.usn = usn ? usn.trim().toUpperCase() : "";
     if (department !== undefined) user.department = department;
     if (password) user.password = password; // pre('save') re-hashes it
 
