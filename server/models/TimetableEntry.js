@@ -5,7 +5,7 @@ const timetableSchema = new mongoose.Schema(
     room: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Room",
-      required: true,
+      required: false,
     },
     day: {
       type: String,

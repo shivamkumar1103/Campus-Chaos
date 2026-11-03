@@ -1,9 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, ArrowUpRight, BellRing, CalendarCheck2, CheckCircle2, Megaphone, Radio, Zap } from 'lucide-react';
+import { Activity, ArrowUpRight, BellRing, CalendarCheck2, CheckCircle2, Megaphone, Radio, Zap, Building2, Vote } from 'lucide-react';
 import { useLostFoundItems } from '../../features/lost-found/hooks/useLostFound';
 import { useConversations } from '../../features/messaging/hooks/useMessaging';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
+import { pollsApi } from '../../features/polls/api/pollsApi';
+import api from '../../utils/api';
 import { Ticker } from './kinetic';
 
 /**
@@ -12,6 +15,7 @@ import { Ticker } from './kinetic';
  */
 export function ChaosDashboard() {
   const { user } = useAuth();
+  const { socket } = useSocket() || {};
   const { data: items } = useLostFoundItems({ q: '', type: '', category: '', status: '' });
   const { data: conversations } = useConversations(Boolean(user));
   const [filter, setFilter] = useState('all');
@@ -20,6 +24,78 @@ export function ChaosDashboard() {
     { name: 'CR • Shreyas', text: 'Lab 4 PCs free till 5PM — sprint now!', hot: true },
     { name: 'Shariq', text: 'Found: black Casio near library steps', hot: false },
   ]);
+
+  // Real-time live Rooms state
+  const [roomStats, setRoomStats] = useState({ free: 0, total: 0, loading: true });
+  const fetchRooms = useCallback(async () => {
+    try {
+      const res = await api.get('/rooms/available');
+      const rooms = Array.isArray(res.data) ? res.data : [];
+      const free = rooms.filter((r) => r.isAvailable || r.status === 'free').length;
+      setRoomStats({ free, total: rooms.length, loading: false });
+    } catch (err) {
+      console.error('Pulse deck failed to fetch rooms:', err);
+    }
+  }, []);
+
+  // Real-time live Polls state
+  const [pollStats, setPollStats] = useState({
+    activeCount: 0,
+    totalVotes: 0,
+    hasElection: false,
+    loading: true,
+  });
+  const fetchPolls = useCallback(async () => {
+    try {
+      const data = await pollsApi.getPolls();
+      const now = new Date();
+      const active = (Array.isArray(data) ? data : []).filter(
+        (p) => p.status === 'active' && new Date(p.expiresAt) > now
+      );
+      const totalVotes = active.reduce((sum, p) => sum + (p.totalVotes || 0), 0);
+      const hasElection = active.some((p) => p.type === 'election');
+      setPollStats({
+        activeCount: active.length,
+        totalVotes,
+        hasElection,
+        loading: false,
+      });
+    } catch (err) {
+      console.error('Pulse deck failed to fetch polls:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRooms();
+    fetchPolls();
+  }, [fetchRooms, fetchPolls]);
+
+  // Live real-time socket events + heartbeat polling
+  useEffect(() => {
+    if (socket) {
+      socket.on('room_status_changed', fetchRooms);
+      socket.on('poll_created', fetchPolls);
+      socket.on('poll_closed', fetchPolls);
+      socket.on('poll_voted', fetchPolls);
+      socket.on('poll_deleted', fetchPolls);
+    }
+
+    const interval = setInterval(() => {
+      fetchRooms();
+      fetchPolls();
+    }, 20000);
+
+    return () => {
+      clearInterval(interval);
+      if (socket) {
+        socket.off('room_status_changed', fetchRooms);
+        socket.off('poll_created', fetchPolls);
+        socket.off('poll_closed', fetchPolls);
+        socket.off('poll_voted', fetchPolls);
+        socket.off('poll_deleted', fetchPolls);
+      }
+    };
+  }, [socket, fetchRooms, fetchPolls]);
 
   const stats = useMemo(() => {
     const list = items ?? [];
@@ -50,11 +126,23 @@ export function ChaosDashboard() {
         <h2 className="font-display text-3xl font-extrabold tracking-tight uppercase sm:text-4xl">
           Pulse <span className="bg-cobalt px-2 text-white">Deck</span>
         </h2>
-        <p className="font-mono text-[11px] font-bold tracking-[0.2em] uppercase opacity-70">Interactive module // live-ish data</p>
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono font-bold uppercase bg-mint/15 text-mint border border-mint/30 rounded">
+            <span className="size-1.5 rounded-full bg-mint animate-pulse" /> Live Telemetry
+          </span>
+          <p className="font-mono text-[11px] font-bold tracking-[0.2em] uppercase opacity-70">Interactive module // real-time sync</p>
+        </div>
       </div>
 
       <Ticker
-        items={[`OPEN CASES: ${stats.open}`, `LOST: ${stats.lost} / FOUND: ${stats.found}`, `UNREAD DMS: ${stats.unread}`, user ? `LOGGED IN AS ${user.name.toUpperCase()}` : 'LOGIN TO UNLOCK DMS']}
+        items={[
+          `OPEN CASES: ${stats.open}`,
+          `ROOMS FREE: ${roomStats.loading ? '...' : `${roomStats.free}/${roomStats.total}`}`,
+          `ACTIVE POLLS: ${pollStats.loading ? '...' : pollStats.activeCount}`,
+          `LOST: ${stats.lost} / FOUND: ${stats.found}`,
+          `UNREAD DMS: ${stats.unread}`,
+          user ? `LOGGED IN AS ${user.name.toUpperCase()}` : 'LOGIN TO UNLOCK DMS',
+        ]}
         className="brutal-sm mb-4 bg-ink py-1.5 font-mono text-[11px] font-bold tracking-[0.18em] text-cream uppercase dark:bg-acid dark:text-obsidian"
         slow
       />
@@ -105,21 +193,58 @@ export function ChaosDashboard() {
 
         {/* COL 2 — stat blocks */}
         <div className="grid grid-cols-2 gap-4">
-          {[
-            { label: 'OPEN CASES', value: String(stats.open), cls: 'bg-sun text-ink', sub: 'NEED HEROES' },
-            { label: 'UNREAD DMS', value: String(stats.unread), cls: 'bg-hyper text-white', sub: user ? 'GO REPLY' : 'LOGIN REQ' },
-            { label: 'ROOMS FREE', value: '6/12', cls: 'bg-mint text-ink', sub: 'MOCK • LIVE SOON' },
-            { label: 'ACTIVE POLL', value: '68%', cls: 'bg-cobalt text-white', sub: 'CR TURNOUT' },
-          ].map((s) => (
-            <div key={s.label} className={`brutal brutal-hover p-3 ${s.cls}`}>
-              <p className="font-mono text-[10px] font-bold tracking-[0.18em]">{s.label}</p>
-              <p className="font-display text-4xl font-extrabold">{s.value}</p>
-              <p className="font-mono text-[10px] font-bold opacity-80">{s.sub}</p>
+          <Link to="/lost-found" className="brutal brutal-hover p-3 bg-sun text-ink block transition-transform">
+            <p className="font-mono text-[10px] font-bold tracking-[0.18em]">OPEN CASES</p>
+            <p className="font-display text-4xl font-extrabold">{String(stats.open)}</p>
+            <p className="font-mono text-[10px] font-bold opacity-80">NEED HEROES</p>
+          </Link>
+
+          <Link to="/messages" className="brutal brutal-hover p-3 bg-hyper text-white block transition-transform">
+            <p className="font-mono text-[10px] font-bold tracking-[0.18em]">UNREAD DMS</p>
+            <p className="font-display text-4xl font-extrabold">{String(stats.unread)}</p>
+            <p className="font-mono text-[10px] font-bold opacity-80">{user ? 'GO REPLY' : 'LOGIN REQ'}</p>
+          </Link>
+
+          <Link to="/rooms" className="brutal brutal-hover p-3 bg-mint text-ink block transition-transform">
+            <div className="flex items-center justify-between">
+              <p className="font-mono text-[10px] font-bold tracking-[0.18em]">ROOMS FREE</p>
+              <Building2 className="size-3.5 text-ink/70" />
             </div>
-          ))}
-          <div className="brutal-sm col-span-2 flex items-center gap-2 bg-acid p-2.5 font-mono text-[11px] font-bold text-obsidian uppercase">
-            <Radio className="size-4 animate-blink" /> Rooms + Polls ship next milestone — UI is live preview
-          </div>
+            <p className="font-display text-4xl font-extrabold">
+              {roomStats.loading ? '...' : `${roomStats.free}/${roomStats.total}`}
+            </p>
+            <p className="font-mono text-[10px] font-bold opacity-80">
+              {roomStats.free > 0 ? `${roomStats.free} AVAILABLE NOW` : 'ALL OCCUPIED'}
+            </p>
+          </Link>
+
+          <Link to="/polls" className="brutal brutal-hover p-3 bg-cobalt text-white block transition-transform">
+            <div className="flex items-center justify-between">
+              <p className="font-mono text-[10px] font-bold tracking-[0.18em]">
+                {pollStats.hasElection ? 'CR ELECTION' : 'ACTIVE POLLS'}
+              </p>
+              <Vote className="size-3.5 text-white/80" />
+            </div>
+            <p className="font-display text-4xl font-extrabold">
+              {pollStats.loading ? '...' : String(pollStats.activeCount)}
+            </p>
+            <p className="font-mono text-[10px] font-bold opacity-80">
+              {pollStats.activeCount > 0 ? `${pollStats.totalVotes} VOTES CAST` : 'NO LIVE POLLS'}
+            </p>
+          </Link>
+
+          <Link
+            to="/rooms"
+            className="brutal-sm col-span-2 flex items-center justify-between bg-acid p-2.5 font-mono text-[11px] font-bold text-obsidian uppercase hover:bg-hyper hover:text-white transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Radio className="size-4 animate-pulse text-hyper" />
+              Live Campus Telemetry • RB, SB & MB Online
+            </span>
+            <span className="flex items-center gap-1 font-bold underline">
+              Browse Free Rooms →
+            </span>
+          </Link>
         </div>
 
         {/* COL 3 — shoutboard + quick actions */}
@@ -149,7 +274,7 @@ export function ChaosDashboard() {
           </div>
           <div className="brutal flex items-center gap-2 bg-paper p-3 text-ink dark:bg-obsidian dark:text-cream">
             <CalendarCheck2 className="size-5 shrink-0" />
-            <p className="text-[13px] font-semibold">Lab 4 free till 5PM • CR meet Fri 4PM • Elections open Mon</p>
+            <p className="text-[13px] font-semibold">Campus Telemetry Live • RB, SB & MB verified</p>
             <CheckCircle2 className="ml-auto size-5 shrink-0 text-mint" />
           </div>
           <button className="brutal-sm invert-hover flex cursor-pointer items-center justify-center gap-2 bg-ink py-2.5 font-mono text-[11px] font-bold tracking-[0.2em] text-cream uppercase hover:bg-hyper hover:text-white dark:bg-cream dark:text-ink dark:hover:bg-hyper dark:hover:text-white">

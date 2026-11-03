@@ -38,6 +38,7 @@ const createItem = async (req, res) => {
       imageUrl,
       userId: req.user._id,
     });
+    req.app.get('io')?.emit('admin_stats_changed');
     res.status(201).json(item);
   } catch (err) {
     res.status(err.statusCode || 500).json({ message: err.message || 'Server error' });
@@ -49,6 +50,7 @@ const claimItem = async (req, res) => {
   try {
     const { claimProof } = req.body;
     const item = await lostFoundService.claimItem(req.params.id, req.user._id, claimProof);
+    req.app.get('io')?.emit('admin_stats_changed');
     res.json(item);
   } catch (err) {
     res.status(err.statusCode || 500).json({ message: err.message || 'Server error' });
@@ -60,6 +62,7 @@ const updateStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const item = await lostFoundService.updateStatus(req.params.id, req.user, status);
+    req.app.get('io')?.emit('admin_stats_changed');
     res.json(item);
   } catch (err) {
     res.status(err.statusCode || 500).json({ message: err.message || 'Server error' });
@@ -70,6 +73,7 @@ const updateStatus = async (req, res) => {
 const deleteItem = async (req, res) => {
   try {
     const result = await lostFoundService.deleteItem(req.params.id, req.user);
+    req.app.get('io')?.emit('admin_stats_changed');
     res.json(result);
   } catch (err) {
     res.status(err.statusCode || 500).json({ message: err.message || 'Server error' });

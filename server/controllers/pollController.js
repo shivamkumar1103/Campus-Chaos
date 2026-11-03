@@ -162,6 +162,7 @@ const createPoll = async (req, res) => {
 
     // Real-time broadcast
     req.app.get("io")?.emit("poll_created", populated);
+    req.app.get("io")?.emit("admin_stats_changed");
 
     res.status(201).json(populated);
   } catch (err) {
@@ -276,6 +277,7 @@ const closePoll = async (req, res) => {
     await poll.save();
 
     req.app.get("io")?.emit("poll_closed", { pollId: poll._id });
+    req.app.get("io")?.emit("admin_stats_changed");
 
     res.json({ message: "Poll closed successfully", poll });
   } catch (err) {
@@ -299,6 +301,7 @@ const deletePoll = async (req, res) => {
     await poll.deleteOne();
 
     req.app.get("io")?.emit("poll_deleted", { pollId: poll._id });
+    req.app.get("io")?.emit("admin_stats_changed");
 
     res.json({ message: "Poll deleted successfully" });
   } catch (err) {

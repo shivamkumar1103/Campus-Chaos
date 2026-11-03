@@ -23,7 +23,15 @@ export function SocketProvider({ children }) {
   }, [socket, user]);
 
   return (
-    <SocketContext.Provider value={{ socket, onlineUserIds }}>
+    <SocketContext.Provider
+      value={{
+        socket,
+        onlineUserIds,
+        on: (...args) => socket?.on(...args),
+        off: (...args) => socket?.off(...args),
+        emit: (...args) => socket?.emit(...args),
+      }}
+    >
       {children}
     </SocketContext.Provider>
   );

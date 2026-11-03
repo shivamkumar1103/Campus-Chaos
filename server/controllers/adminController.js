@@ -3,6 +3,8 @@ const Room = require("../models/Room");
 const TimetableEntry = require("../models/TimetableEntry");
 const LostFoundItem = require("../models/LostFoundItem");
 const Message = require("../models/Message");
+const Poll = require("../models/Poll");
+const roomService = require("../services/roomService");
 
 // Helper: parse simple CSV with quoted support
 function parseCSV(text) {
@@ -60,28 +62,65 @@ function parseCSV(text) {
 // -------------------------------------------------------------
 const getOverviewStats = async (req, res) => {
   try {
-    const [totalUsers, totalRooms, totalItems, totalTimetable] = await Promise.all([
-      User.countDocuments(),
-      Room.countDocuments(),
-      LostFoundItem.countDocuments(),
-      TimetableEntry.countDocuments(),
-    ]);
-
-    const usersByRole = await User.aggregate([
-      { $group: { _id: "$role", count: { $sum: 1 } } },
-    ]);
-
-    const lostFoundByStatus = await LostFoundItem.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 } } },
-    ]);
-
-    res.json({
+    const [
       totalUsers,
       totalRooms,
       totalItems,
       totalTimetable,
-      usersByRole: usersByRole.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
-      lostFoundByStatus: lostFoundByStatus.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
+      totalPolls,
+      activePolls,
+      usersByRole,
+      lostFoundByStatus,
+      availableRooms,
+    ] = await Promise.all([
+      User.countDocuments(),
+      Room.countDocuments(),
+      LostFoundItem.countDocuments(),
+      TimetableEntry.countDocuments(),
+      Poll.countDocuments(),
+      Poll.countDocuments({ status: "active", expiresAt: { $gt: new Date() } }),
+      User.aggregate([{ $group: { _id: "$role", count: { $sum: 1 } } }]),
+      LostFoundItem.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
+      roomService.getAvailableRooms({}, req.user).catch((e) => {
+        console.error("Failed to calculate available rooms in getOverviewStats:", e);
+        return [];
+      }),
+    ]);
+
+    const freeRoomsRightNow = Array.isArray(availableRooms)
+      ? availableRooms.filter((r) => r.isAvailable || r.status === "free").length
+      : 0;
+    const occupiedRoomsRightNow = Array.isArray(availableRooms)
+      ? availableRooms.filter((r) => r.isOccupied || r.status === "occupied").length
+      : 0;
+
+    const roleMap = usersByRole.reduce(
+      (acc, curr) => ({ ...acc, [curr._id]: curr.count }),
+      {}
+    );
+    const lfMap = lostFoundByStatus.reduce(
+      (acc, curr) => ({ ...acc, [curr._id]: curr.count }),
+      {}
+    );
+
+    res.json({
+      totalUsers,
+      totalRooms,
+      totalTimetable,
+      totalPolls,
+      activePolls,
+      freeRoomsRightNow,
+      occupiedRoomsRightNow,
+      userRoles: roleMap,
+      usersByRole: roleMap,
+      lostFound: {
+        total: totalItems,
+        open: lfMap.open || 0,
+        claimed: lfMap.claimed || 0,
+        resolved: lfMap.resolved || 0,
+      },
+      lostFoundByStatus: lfMap,
+      totalItems,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -144,6 +183,7 @@ const createUser = async (req, res) => {
 
     const userObj = user.toObject();
     delete userObj.password;
+    req.app.get("io")?.emit("admin_stats_changed");
     res.status(201).json(userObj);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -180,6 +220,7 @@ const updateUser = async (req, res) => {
     await user.save();
     const userObj = user.toObject();
     delete userObj.password;
+    req.app.get("io")?.emit("admin_stats_changed");
     res.json(userObj);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -197,6 +238,7 @@ const deleteUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     await user.deleteOne();
+    req.app.get("io")?.emit("admin_stats_changed");
     res.json({ message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -211,18 +253,23 @@ const createRoom = async (req, res) => {
     const { name, building, floor, type } = req.body;
     if (!name) return res.status(400).json({ message: "Room name is required" });
 
-    const existing = await Room.findOne({ name, building: building || "Main Building" });
+    const defaultBuilding = "Ramanujacharya Bhavana (RB)";
+    const targetBuilding = building || defaultBuilding;
+
+    const existing = await Room.findOne({ name, building: targetBuilding });
     if (existing) {
-      return res.status(400).json({ message: `Room ${name} already exists in ${building || "Main Building"}` });
+      return res.status(400).json({ message: `Room ${name} already exists in ${targetBuilding}` });
     }
 
     const room = await Room.create({
       name,
-      building: building || "Main Building",
+      building: targetBuilding,
       floor: floor !== undefined ? Number(floor) : 0,
       type: type || "class",
     });
 
+    req.app.get("io")?.emit("admin_stats_changed");
+    req.app.get("io")?.emit("room_status_changed");
     res.status(201).json(room);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -243,6 +290,8 @@ const updateRoom = async (req, res) => {
     if (type) room.type = type;
 
     await room.save();
+    req.app.get("io")?.emit("admin_stats_changed");
+    req.app.get("io")?.emit("room_status_changed");
     res.json(room);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -264,6 +313,8 @@ const deleteRoom = async (req, res) => {
     }
 
     await room.deleteOne();
+    req.app.get("io")?.emit("admin_stats_changed");
+    req.app.get("io")?.emit("room_status_changed");
     res.json({ message: "Room deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -275,12 +326,20 @@ const deleteRoom = async (req, res) => {
 // -------------------------------------------------------------
 const listTimetable = async (req, res) => {
   try {
-    const { day, roomId, classKey, semester } = req.query;
+    const { day, roomId, classKey, semester, search } = req.query;
     const filter = {};
-    if (day) filter.day = day;
+    if (day && day !== "All") filter.day = day;
     if (roomId) filter.room = roomId;
-    if (classKey) filter.classKey = classKey;
-    if (semester) filter.semester = semester;
+    if (classKey && classKey !== "All") {
+      filter.classKey = new RegExp(`^${classKey.trim()}$`, "i");
+    }
+    if (semester && semester !== "All") {
+      filter.semester = semester.trim();
+    }
+    if (search) {
+      const rx = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      filter.$or = [{ subject: rx }, { classKey: rx }];
+    }
 
     const entries = await TimetableEntry.find(filter)
       .populate("room", "name building floor type")
@@ -304,18 +363,20 @@ const createTimetableEntry = async (req, res) => {
       return res.status(400).json({ message: "End time must be after start time" });
     }
 
-    // Check for room conflict: start < existing.end && end > existing.start on same day
-    const conflict = await TimetableEntry.findOne({
-      room,
-      day,
-      start: { $lt: end },
-      end: { $gt: start },
-    });
-
-    if (conflict) {
-      return res.status(409).json({
-        message: `Room conflict: already occupied by '${conflict.subject}' (${conflict.start} - ${conflict.end})`,
+    // Check for room conflict if a room is assigned
+    if (room) {
+      const conflict = await TimetableEntry.findOne({
+        room,
+        day,
+        start: { $lt: end },
+        end: { $gt: start },
       });
+
+      if (conflict) {
+        return res.status(409).json({
+          message: `Room conflict: already occupied by '${conflict.subject}' (${conflict.start} - ${conflict.end})`,
+        });
+      }
     }
 
     const entry = await TimetableEntry.create({
@@ -335,6 +396,8 @@ const createTimetableEntry = async (req, res) => {
       { path: "teacherId", select: "name email department" },
     ]);
 
+    req.app.get("io")?.emit("admin_stats_changed");
+    req.app.get("io")?.emit("room_status_changed");
     res.status(201).json(entry);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -358,19 +421,21 @@ const updateTimetableEntry = async (req, res) => {
       return res.status(400).json({ message: "End time must be after start time" });
     }
 
-    // Check conflict against OTHER entries
-    const conflict = await TimetableEntry.findOne({
-      _id: { $ne: id },
-      room: newRoom,
-      day: newDay,
-      start: { $lt: newEnd },
-      end: { $gt: newStart },
-    });
-
-    if (conflict) {
-      return res.status(409).json({
-        message: `Room conflict: already occupied by '${conflict.subject}' (${conflict.start} - ${conflict.end})`,
+    // Check conflict against OTHER entries if a room is assigned
+    if (newRoom) {
+      const conflict = await TimetableEntry.findOne({
+        _id: { $ne: id },
+        room: newRoom,
+        day: newDay,
+        start: { $lt: newEnd },
+        end: { $gt: newStart },
       });
+
+      if (conflict) {
+        return res.status(409).json({
+          message: `Room conflict: already occupied by '${conflict.subject}' (${conflict.start} - ${conflict.end})`,
+        });
+      }
     }
 
     if (room) entry.room = room;
@@ -389,6 +454,8 @@ const updateTimetableEntry = async (req, res) => {
       { path: "teacherId", select: "name email department" },
     ]);
 
+    req.app.get("io")?.emit("admin_stats_changed");
+    req.app.get("io")?.emit("room_status_changed");
     res.json(entry);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -402,6 +469,8 @@ const deleteTimetableEntry = async (req, res) => {
     if (!entry) return res.status(404).json({ message: "Timetable entry not found" });
 
     await entry.deleteOne();
+    req.app.get("io")?.emit("admin_stats_changed");
+    req.app.get("io")?.emit("room_status_changed");
     res.json({ message: "Timetable entry deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -442,10 +511,13 @@ const uploadTimetableCsv = async (req, res) => {
       const rowNum = i + 2; // header is line 1
 
       const roomName = (row.room || row.roomName || "").trim().toLowerCase();
-      const matchedRoom = roomMap.get(roomName);
-      if (!matchedRoom) {
-        errors.push(`Row ${rowNum}: Room '${row.room || ""}' does not exist.`);
-        continue;
+      let matchedRoom = null;
+      if (roomName) {
+        matchedRoom = roomMap.get(roomName);
+        if (!matchedRoom) {
+          errors.push(`Row ${rowNum}: Room '${row.room || ""}' does not exist.`);
+          continue;
+        }
       }
 
       const day = (row.day || "").trim();
@@ -467,7 +539,7 @@ const uploadTimetableCsv = async (req, res) => {
       }
 
       entriesToInsert.push({
-        room: matchedRoom._id,
+        room: matchedRoom ? matchedRoom._id : null,
         day,
         start,
         end,
@@ -483,6 +555,9 @@ const uploadTimetableCsv = async (req, res) => {
     }
 
     const inserted = await TimetableEntry.insertMany(entriesToInsert);
+
+    req.app.get("io")?.emit("admin_stats_changed");
+    req.app.get("io")?.emit("room_status_changed");
 
     res.status(201).json({
       message: `Successfully imported ${inserted.length} timetable entries`,
@@ -524,6 +599,8 @@ const adminDeleteLostFound = async (req, res) => {
     if (!item) return res.status(404).json({ message: "Item not found" });
 
     await item.deleteOne();
+    req.app.get("io")?.emit("admin_stats_changed");
+    req.app.get("io")?.emit("lost_found_updated");
     res.json({ message: "Item deleted by admin" });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -543,6 +620,8 @@ const adminUpdateLostFoundStatus = async (req, res) => {
 
     item.status = status;
     await item.save();
+    req.app.get("io")?.emit("admin_stats_changed");
+    req.app.get("io")?.emit("lost_found_updated");
     res.json(item);
   } catch (err) {
     res.status(500).json({ message: err.message });

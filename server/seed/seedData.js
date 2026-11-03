@@ -77,29 +77,25 @@ const run = async () => {
   }
   console.log(`Created ${Object.keys(userMap).length / 2} users.`);
 
-  // 2. Seed Rooms (Main Building)
-  // Ground Floor: 101, 106, 107, 108, 109, MB 01, MB 03, CS Lab-1, CS Lab-8, AIML Lab-1, AIML Lab-3
-  // 1st Floor: 201 to 209
-  // 2nd Floor: 301 to 310
-  // 3rd Floor: 401 to 410
+  // 2. Seed Rooms across the 3 Campus Buildings:
+  // - Ramanujacharya Bhavana (RB): All Classrooms (Ground, 1st, 2nd, 3rd Floor)
+  // - Shankaracharya Bhavan (SB): Auditorium (Ground Floor) + All Labs (1st, 2nd, 3rd Floor)
+  // - Madhwacharya Bhavana (MB): Ground Floor Classrooms (MB-01 to MB-05)
   const roomDefs = [
+    // =========================================================
+    // 1. Ramanujacharya Bhavana (RB) — Classrooms Only
+    // =========================================================
     // Ground Floor (Floor 0)
-    { name: '101', building: 'Main Building', floor: 0, type: 'class' },
-    { name: '106', building: 'Main Building', floor: 0, type: 'class' },
-    { name: '107', building: 'Main Building', floor: 0, type: 'class' },
-    { name: '108', building: 'Main Building', floor: 0, type: 'class' },
-    { name: '109', building: 'Main Building', floor: 0, type: 'class' },
-    { name: 'MB 01', building: 'Main Building', floor: 0, type: 'class' },
-    { name: 'MB 03', building: 'Main Building', floor: 0, type: 'class' },
-    { name: 'CS Lab-1', building: 'Main Building', floor: 0, type: 'lab' },
-    { name: 'CS Lab-8', building: 'Main Building', floor: 0, type: 'lab' },
-    { name: 'AIML Lab-1', building: 'Main Building', floor: 0, type: 'lab' },
-    { name: 'AIML Lab-3', building: 'Main Building', floor: 0, type: 'lab' },
+    { name: '101', building: 'Ramanujacharya Bhavana (RB)', floor: 0, type: 'class' },
+    { name: '106', building: 'Ramanujacharya Bhavana (RB)', floor: 0, type: 'class' },
+    { name: '107', building: 'Ramanujacharya Bhavana (RB)', floor: 0, type: 'class' },
+    { name: '108', building: 'Ramanujacharya Bhavana (RB)', floor: 0, type: 'class' },
+    { name: '109', building: 'Ramanujacharya Bhavana (RB)', floor: 0, type: 'class' },
 
     // 1st Floor (Floor 1): 201 to 209
     ...Array.from({ length: 9 }, (_, i) => ({
       name: `${201 + i}`,
-      building: 'Main Building',
+      building: 'Ramanujacharya Bhavana (RB)',
       floor: 1,
       type: 'class',
     })),
@@ -107,7 +103,7 @@ const run = async () => {
     // 2nd Floor (Floor 2): 301 to 310
     ...Array.from({ length: 10 }, (_, i) => ({
       name: `${301 + i}`,
-      building: 'Main Building',
+      building: 'Ramanujacharya Bhavana (RB)',
       floor: 2,
       type: 'class',
     })),
@@ -115,8 +111,55 @@ const run = async () => {
     // 3rd Floor (Floor 3): 401 to 410
     ...Array.from({ length: 10 }, (_, i) => ({
       name: `${401 + i}`,
-      building: 'Main Building',
+      building: 'Ramanujacharya Bhavana (RB)',
       floor: 3,
+      type: 'class',
+    })),
+
+    // =========================================================
+    // 2. Shankaracharya Bhavan (SB) — Auditorium & Labs Only
+    // =========================================================
+    // Ground Floor (Floor 0): Auditorium (Admin-Only Booking)
+    { name: 'Auditorium', building: 'Shankaracharya Bhavan (SB)', floor: 0, type: 'auditorium' },
+
+    // 1st Floor (Floor 1): AIML Labs 1-4 and MCA Labs 1-3
+    ...Array.from({ length: 4 }, (_, i) => ({
+      name: `AIML Lab ${i + 1}`,
+      building: 'Shankaracharya Bhavan (SB)',
+      floor: 1,
+      type: 'lab',
+    })),
+    ...Array.from({ length: 3 }, (_, i) => ({
+      name: `MCA Lab ${i + 1}`,
+      building: 'Shankaracharya Bhavan (SB)',
+      floor: 1,
+      type: 'lab',
+    })),
+
+    // 2nd Floor (Floor 2): CS Labs 1-8
+    ...Array.from({ length: 8 }, (_, i) => ({
+      name: `CS Lab ${i + 1}`,
+      building: 'Shankaracharya Bhavan (SB)',
+      floor: 2,
+      type: 'lab',
+    })),
+
+    // 3rd Floor (Floor 3): IS Labs 1-8
+    ...Array.from({ length: 8 }, (_, i) => ({
+      name: `IS Lab ${i + 1}`,
+      building: 'Shankaracharya Bhavan (SB)',
+      floor: 3,
+      type: 'lab',
+    })),
+
+    // =========================================================
+    // 3. Madhwacharya Bhavana (MB) — Ground Floor Classes Only
+    // =========================================================
+    // Ground Floor (Floor 0): MB-01 to MB-05
+    ...Array.from({ length: 5 }, (_, i) => ({
+      name: `MB-0${i + 1}`,
+      building: 'Madhwacharya Bhavana (MB)',
+      floor: 0,
       type: 'class',
     })),
   ];
@@ -125,8 +168,21 @@ const run = async () => {
   for (const r of roomDefs) {
     const created = await Room.create(r);
     roomMap[r.name] = created;
+    // Map alternate formats for timetable lookups (e.g. "CS Lab-1" <-> "CS Lab 1")
+    if (r.name.includes('Lab ')) {
+      roomMap[r.name.replace('Lab ', 'Lab-')] = created;
+    }
+    if (r.name.includes('Lab-')) {
+      roomMap[r.name.replace('Lab-', 'Lab ')] = created;
+    }
+    if (r.name.startsWith('MB-0')) {
+      const num = r.name.slice(-1);
+      roomMap[`MB 0${num}`] = created;
+      roomMap[`MB-0${num}`] = created;
+      roomMap[`MB0${num}`] = created;
+    }
   }
-  console.log(`Created ${Object.keys(roomMap).length} rooms in Main Building.`);
+  console.log(`Created ${roomDefs.length} rooms across RB, SB, and MB.`);
 
   // 3. Timetable Data (5th Sem CSE & AIML)
   const timetable = [

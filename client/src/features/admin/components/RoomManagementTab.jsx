@@ -24,7 +24,7 @@ export function RoomManagementTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    building: "Main Building",
+    building: "Ramanujacharya Bhavana (RB)",
     floor: 0,
     type: "class",
   });
@@ -53,7 +53,7 @@ export function RoomManagementTab() {
     setEditingRoom(null);
     setFormData({
       name: "",
-      building: "Main Building",
+      building: "Ramanujacharya Bhavana (RB)",
       floor: 0,
       type: "class",
     });
@@ -64,7 +64,7 @@ export function RoomManagementTab() {
     setEditingRoom(room);
     setFormData({
       name: room.name,
-      building: room.building || "Main Building",
+      building: room.building || "Ramanujacharya Bhavana (RB)",
       floor: room.floor ?? 0,
       type: room.type || "class",
     });
@@ -132,9 +132,10 @@ export function RoomManagementTab() {
             onChange={(e) => setTypeFilter(e.target.value)}
             className="brutal-flat h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer"
           >
-            <option value="">All Types (Classroom & Lab)</option>
+            <option value="">All Types (Class, Lab, Auditorium)</option>
             <option value="class">Classroom Only</option>
             <option value="lab">Laboratory Only</option>
+            <option value="auditorium">Auditorium Only</option>
           </select>
 
           <span className="text-xs font-mono text-muted-foreground ml-auto hidden sm:inline">
@@ -183,12 +184,14 @@ export function RoomManagementTab() {
                   <h4 className="font-display font-extrabold text-lg text-foreground">{r.name}</h4>
                   <span
                     className={`text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${
-                      r.type === "lab"
+                      r.type === "auditorium"
+                        ? "border-amber-500/50 text-amber-500 bg-amber-500/10"
+                        : r.type === "lab"
                         ? "border-hyper/40 text-hyper bg-hyper/10"
                         : "border-border text-muted-foreground bg-black/5 dark:bg-white/5"
                     }`}
                   >
-                    {r.type === "class" ? "CLASSROOM" : "LAB"}
+                    {r.type === "auditorium" ? "AUDITORIUM" : r.type === "class" ? "CLASSROOM" : "LAB"}
                   </span>
                 </div>
                 <p className="text-xs font-mono text-muted-foreground mb-4">
@@ -253,12 +256,15 @@ export function RoomManagementTab() {
 
               <div>
                 <Label className="block uppercase text-foreground mb-1 font-bold">Building</Label>
-                <Input
-                  required
+                <select
                   value={formData.building}
                   onChange={(e) => setFormData({ ...formData, building: e.target.value })}
-                  placeholder="Main Building"
-                />
+                  className="brutal-flat w-full h-11 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer"
+                >
+                  <option value="Ramanujacharya Bhavana (RB)">Ramanujacharya Bhavana (RB)</option>
+                  <option value="Shankaracharya Bhavan (SB)">Shankaracharya Bhavan (SB)</option>
+                  <option value="Madhwacharya Bhavana (MB)">Madhwacharya Bhavana (MB)</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -282,6 +288,7 @@ export function RoomManagementTab() {
                   >
                     <option value="class">Classroom</option>
                     <option value="lab">Laboratory</option>
+                    <option value="auditorium">Auditorium</option>
                   </select>
                 </div>
               </div>

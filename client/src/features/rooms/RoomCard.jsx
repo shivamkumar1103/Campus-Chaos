@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui";
 import { useState } from "react";
 import { Clock, Calendar, Check, X, ShieldAlert } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export function RoomCard({
   room,
   onBook,
   canBook,
+  timeSlot,
   occupiedBy,
   canCancelCurrent,
   activeBookingId,
@@ -13,7 +15,11 @@ export function RoomCard({
   onCancelBooking,
   onCancelTimetable,
 }) {
+  const { user: currentUser } = useAuth();
   const [isCanceling, setIsCanceling] = useState(false);
+
+  const isAuditorium = room.type === "auditorium" || room.name.toLowerCase() === "auditorium";
+  const isAdmin = currentUser?.role === "admin";
 
   const handleCancelClick = async () => {
     if (!confirm(`Are you sure you want to cancel this booking/slot for ${room.name}?`)) return;
@@ -51,12 +57,14 @@ export function RoomCard({
           </h3>
           <span
             className={`text-[10px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 rounded border ${
-              room.type === "lab"
+              isAuditorium
+                ? "border-amber-500/50 text-amber-500 bg-amber-500/10"
+                : room.type === "lab"
                 ? "border-hyper/40 text-hyper bg-hyper/10"
                 : "border-border text-muted-foreground bg-black/5 dark:bg-white/5"
             }`}
           >
-            {room.type === "class" ? "CLASSROOM" : "LAB"}
+            {isAuditorium ? "AUDITORIUM" : room.type === "class" ? "CLASSROOM" : "LAB"}
           </span>
         </div>
 
@@ -66,15 +74,22 @@ export function RoomCard({
 
         {/* Status Badge */}
         {canBook ? (
-          <div className="border border-acid/50 text-acid bg-acid/10 text-[11px] font-bold tracking-wide uppercase rounded p-2 mb-4 flex items-center gap-1.5 font-mono">
-            <span className="inline-block size-2 rounded-full bg-acid animate-pulse"></span>
-            FREE — Available Now
+          <div className="border border-acid/50 text-acid bg-acid/10 text-[11px] font-bold tracking-wide uppercase rounded p-2 mb-4 flex items-center justify-between font-mono">
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block size-2 rounded-full bg-acid animate-pulse"></span>
+              <span>FREE {timeSlot ? `• ${timeSlot}` : "— Available Now"}</span>
+            </div>
+            {isAuditorium && (
+              <span className="text-[9px] uppercase tracking-wider bg-amber-500/20 text-amber-500 border border-amber-500/40 px-1 py-0.2 rounded font-bold">
+                Admin Booking
+              </span>
+            )}
           </div>
         ) : (
           <div className="border border-hyper/50 text-hyper bg-hyper/10 text-[11px] font-bold tracking-wide uppercase rounded p-2 mb-4 flex flex-col gap-0.5 font-mono">
             <div className="flex items-center gap-1.5">
               <span className="inline-block size-2 rounded-full bg-hyper"></span>
-              Occupied
+              <span>Occupied {timeSlot ? `(${timeSlot})` : ""}</span>
             </div>
             {occupiedBy && (
               <span className="text-[10px] opacity-90 truncate font-mono normal-case text-foreground">
@@ -88,13 +103,20 @@ export function RoomCard({
       {/* Action Buttons */}
       <div className="pt-3 border-t border-border flex items-center gap-2">
         {canBook ? (
-          <Button
-            variant="default"
-            onClick={() => onBook(room)}
-            className="w-full py-2 font-display font-bold uppercase tracking-wider text-xs"
-          >
-            Book Slot
-          </Button>
+          isAuditorium && !isAdmin ? (
+            <div className="w-full py-2 text-center text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded flex items-center justify-center gap-1.5">
+              <ShieldAlert className="size-3.5" />
+              <span>Admin Booking Only</span>
+            </div>
+          ) : (
+            <Button
+              variant="default"
+              onClick={() => onBook(room)}
+              className="w-full py-2 font-display font-bold uppercase tracking-wider text-xs"
+            >
+              Book Slot {timeSlot ? `(${timeSlot})` : ""}
+            </Button>
+          )
         ) : canCancelCurrent ? (
           <Button
             variant="destructive"

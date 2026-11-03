@@ -1,31 +1,40 @@
 import { useState, useEffect } from "react";
 import { Button, Input } from "@/components/ui";
 import api from "@/utils/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, Clock, CheckCircle2, Sparkles, Building2 } from "lucide-react";
 
-const TIME_OPTIONS = [
-  { value: "08:00", label: "08:00 AM" },
-  { value: "08:30", label: "08:30 AM" },
-  { value: "09:00", label: "09:00 AM" },
-  { value: "09:30", label: "09:30 AM" },
-  { value: "10:00", label: "10:00 AM" },
-  { value: "10:30", label: "10:30 AM" },
-  { value: "11:00", label: "11:00 AM" },
-  { value: "11:30", label: "11:30 AM" },
-  { value: "12:00", label: "12:00 PM" },
-  { value: "12:30", label: "12:30 PM" },
-  { value: "13:00", label: "01:00 PM" },
-  { value: "13:30", label: "01:30 PM" },
-  { value: "14:00", label: "02:00 PM" },
-  { value: "14:30", label: "02:30 PM" },
-  { value: "15:00", label: "03:00 PM" },
-  { value: "15:30", label: "03:30 PM" },
-  { value: "16:00", label: "04:00 PM" },
-  { value: "16:30", label: "04:30 PM" },
-  { value: "17:00", label: "05:00 PM" },
-  { value: "17:30", label: "05:30 PM" },
-  { value: "18:00", label: "06:00 PM" },
+const QUICK_PURPOSES = [
+  "Extra Lecture",
+  "Lab Practical",
+  "Internal Test / Exam",
+  "Doubt Clearing",
+  "Project Review",
+  "Club Meeting",
 ];
+
+const formatTime = (timeStr) => {
+  if (!timeStr) return "";
+  const [hStr, mStr] = timeStr.split(":");
+  let h = parseInt(hStr, 10);
+  const m = mStr || "00";
+  const ampm = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return `${String(h).padStart(2, "0")}:${m} ${ampm}`;
+};
+
+const calculateDuration = (start, end) => {
+  if (!start || !end) return "";
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const diff = eh * 60 + em - (sh * 60 + sm);
+  if (diff <= 0) return "";
+  const hours = Math.floor(diff / 60);
+  const mins = diff % 60;
+  if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+  if (hours > 0) return `${hours} hr${hours > 1 ? "s" : ""}`;
+  return `${mins} mins`;
+};
 
 export function BookModal({
   isOpen,
@@ -35,16 +44,12 @@ export function BookModal({
   defaultStart = "10:00",
   defaultEnd = "11:00",
 }) {
-  const [startTime, setStartTime] = useState(defaultStart);
-  const [endTime, setEndTime] = useState(defaultEnd);
   const [purpose, setPurpose] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setStartTime(defaultStart);
-      setEndTime(defaultEnd);
       setPurpose("");
       setError("");
     }
@@ -52,37 +57,15 @@ export function BookModal({
 
   if (!isOpen || !room) return null;
 
-  const handleStartChange = (newStart) => {
-    setStartTime(newStart);
-    if (endTime <= newStart) {
-      const idx = TIME_OPTIONS.findIndex((t) => t.value === newStart);
-      const nextIdx = Math.min(idx + 2, TIME_OPTIONS.length - 1);
-      setEndTime(TIME_OPTIONS[nextIdx].value);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!startTime || !endTime) {
-      setError("Start and end times are required.");
+    if (!defaultStart || !defaultEnd) {
+      setError("Please select a time slot from the room filters first.");
       return;
     }
 
-    const [startH, startM] = startTime.split(":").map(Number);
-    const [endH, endM] = endTime.split(":").map(Number);
-    const startMins = startH * 60 + (startM || 0);
-    const endMins = endH * 60 + (endM || 0);
-
-    if (endH > 18 || (endH === 18 && endM > 0)) {
-      setError("Booking cannot be past 6:00 PM.");
-      return;
-    }
-    if (endMins <= startMins) {
-      setError("End time must be after start time.");
-      return;
-    }
-    if (endMins - startMins > 240) {
-      setError("Booking duration cannot exceed 4 hours.");
+    if (!purpose.trim()) {
+      setError("Please enter or select a purpose / subject.");
       return;
     }
 
@@ -92,9 +75,9 @@ export function BookModal({
     try {
       await api.post("/rooms/book", {
         roomId: room._id,
-        start: startTime,
-        end: endTime,
-        purpose: purpose.trim() || "Adhoc Class / Meeting",
+        start: defaultStart,
+        end: defaultEnd,
+        purpose: purpose.trim(),
       });
 
       if (onSuccess) onSuccess();
@@ -108,21 +91,23 @@ export function BookModal({
     }
   };
 
-  const availableEndOptions = TIME_OPTIONS.filter((t) => t.value > startTime);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div
-        className="brutal-lg max-w-md w-full bg-card p-6 shadow-2xl relative text-foreground border-border"
-      >
+      <div className="brutal-lg max-w-md w-full bg-card p-6 shadow-2xl relative text-foreground border-border">
+        {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div>
             <h2 className="font-display font-extrabold text-2xl uppercase text-foreground">
               Book Room {room.name}
             </h2>
-            <p className="text-muted-foreground text-xs mt-1 font-mono">
+            <p className="text-muted-foreground text-xs mt-1 font-mono flex items-center gap-1.5">
+              <Building2 className="size-3.5 text-acid" />
               {room.building} · Floor {room.floor === 0 ? "Ground" : room.floor} ·{" "}
-              {room.type === "class" ? "Classroom" : "Laboratory"}
+              {room.type === "auditorium"
+                ? "Auditorium"
+                : room.type === "class"
+                ? "Classroom"
+                : "Laboratory"}
             </p>
           </div>
           <button
@@ -134,56 +119,67 @@ export function BookModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Confirmed Time Slot Display (Selected from outside filter) */}
+          <div className="bg-paper dark:bg-void p-3.5 border-2 border-acid/60 rounded space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-mono font-bold tracking-widest text-muted-foreground uppercase block">
+                  Confirmed Time Slot (Today)
+                </span>
+                <span className="font-display font-black text-lg text-foreground">
+                  {formatTime(defaultStart)} — {formatTime(defaultEnd)}
+                </span>
+              </div>
+              <span className="px-2.5 py-1 text-xs font-mono font-bold bg-acid text-obsidian rounded uppercase shadow-sm">
+                {calculateDuration(defaultStart, defaultEnd)}
+              </span>
+            </div>
+            <div className="text-[10px] font-mono text-muted-foreground flex items-center gap-1.5 pt-1.5 border-t border-border/40">
+              <Clock className="size-3 text-acid shrink-0" />
+              <span>Time slot is configured directly from your active room search.</span>
+            </div>
+          </div>
+
+          {/* Purpose / Subject with 1-click Quick Presets */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-foreground opacity-90">
-              Purpose / Subject
+              Purpose / Subject Title *
             </label>
             <Input
-              placeholder="e.g., Extra Lecture, Practical, Seminar"
+              placeholder="e.g., Extra Lecture, DBMS Lab, Seminar, Class Test"
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
               required
+              autoFocus
+              className="text-xs font-mono"
             />
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-foreground opacity-90">
-                Start Time (30m)
-              </label>
-              <select
-                value={startTime}
-                onChange={(e) => handleStartChange(e.target.value)}
-                className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
-              >
-                {TIME_OPTIONS.slice(0, -1).map((t) => (
-                  <option key={t.value} value={t.value} className="bg-paper text-ink dark:bg-void dark:text-cream">
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-foreground opacity-90">
-                End Time (30m)
-              </label>
-              <select
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
-              >
-                {availableEndOptions.map((t) => (
-                  <option key={t.value} value={t.value} className="bg-paper text-ink dark:bg-void dark:text-cream">
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+            {/* Quick Presets */}
+            <div className="mt-2.5">
+              <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground flex items-center gap-1 mb-1.5">
+                <Sparkles className="size-3 text-acid" /> Quick Presets:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_PURPOSES.map((p) => {
+                  const isSelected = purpose === p;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPurpose(p)}
+                      className={`px-2 py-1 text-[10px] font-mono font-bold uppercase rounded border transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-acid text-obsidian border-acid shadow-sm"
+                          : "bg-paper dark:bg-void text-muted-foreground border-border hover:text-foreground hover:border-acid"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-
-          <p className="text-[11px] font-mono text-muted-foreground">
-            Date forced to today (IST). Max duration 4 hours, up to 6:00 PM.
-          </p>
 
           {error && (
             <div className="p-2.5 bg-hyper/10 border border-hyper text-hyper text-xs font-mono font-semibold rounded">
@@ -191,6 +187,7 @@ export function BookModal({
             </div>
           )}
 
+          {/* Action Buttons */}
           <div className="mt-4 flex gap-3 pt-3 border-t border-border">
             <Button
               type="submit"
@@ -200,10 +197,10 @@ export function BookModal({
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="size-4 mr-2 animate-spin" /> Booking...
+                  <Loader2 className="size-4 mr-2 animate-spin" /> Confirming...
                 </>
               ) : (
-                "Confirm Booking"
+                `Confirm Booking (${defaultStart} - ${defaultEnd})`
               )}
             </Button>
             <Button

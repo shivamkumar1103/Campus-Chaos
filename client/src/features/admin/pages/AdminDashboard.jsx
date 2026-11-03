@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { adminApi } from "../api/adminApi";
+import { useSocket } from "@/context/SocketContext";
 import { UserManagementTab } from "../components/UserManagementTab";
 import { RoomManagementTab } from "../components/RoomManagementTab";
 import { TimetableManagementTab } from "../components/TimetableManagementTab";
@@ -17,6 +18,8 @@ import {
   Zap,
   Loader2,
   RefreshCw,
+  Vote,
+  Radio,
 } from "lucide-react";
 
 const TABS = [
@@ -33,22 +36,56 @@ export function AdminDashboard() {
 
   const [stats, setStats] = useState(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const { socket } = useSocket() || {};
 
-  const fetchStats = async () => {
-    setIsLoadingStats(true);
+  const fetchStats = useCallback(async (quiet = false) => {
+    if (!quiet) setIsLoadingStats(true);
     try {
       const data = await adminApi.getOverview();
       setStats(data);
     } catch (err) {
       console.error("Failed to load admin overview stats:", err);
     } finally {
-      setIsLoadingStats(false);
+      if (!quiet) setIsLoadingStats(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats, currentTab]);
+
+  // Real-time live synchronization via sockets and periodic heartbeat
+  useEffect(() => {
+    const handleSync = () => fetchStats(true);
+
+    if (socket) {
+      socket.on("admin_stats_changed", handleSync);
+      socket.on("room_status_changed", handleSync);
+      socket.on("poll_created", handleSync);
+      socket.on("poll_closed", handleSync);
+      socket.on("poll_voted", handleSync);
+      socket.on("poll_deleted", handleSync);
+      socket.on("lost_found_updated", handleSync);
+    }
+
+    // 20-second fallback heartbeat to auto-recompute free rooms as clock moves
+    const interval = setInterval(() => {
+      fetchStats(true);
+    }, 20000);
+
+    return () => {
+      clearInterval(interval);
+      if (socket) {
+        socket.off("admin_stats_changed", handleSync);
+        socket.off("room_status_changed", handleSync);
+        socket.off("poll_created", handleSync);
+        socket.off("poll_closed", handleSync);
+        socket.off("poll_voted", handleSync);
+        socket.off("poll_deleted", handleSync);
+        socket.off("lost_found_updated", handleSync);
+      }
+    };
+  }, [socket, fetchStats]);
 
   const handleTabChange = (tabId) => {
     setSearchParams({ tab: tabId });
@@ -73,18 +110,23 @@ export function AdminDashboard() {
             </p>
           </div>
 
-          <button
-            onClick={fetchStats}
-            disabled={isLoadingStats}
-            className="brutal-sm flex items-center gap-2 border-[2.5px] border-cream bg-paper px-3 py-1.5 font-mono text-xs font-bold text-ink uppercase transition-transform hover:-translate-y-0.5 dark:border-obsidian dark:bg-void dark:text-cream"
-          >
-            <RefreshCw className={`size-3.5 ${isLoadingStats ? "animate-spin" : ""}`} />
-            Sync Stats
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono font-bold uppercase bg-paper/20 dark:bg-obsidian/20 border border-current rounded">
+              <span className="size-2 rounded-full bg-mint animate-pulse" /> Live Telemetry
+            </span>
+            <button
+              onClick={() => fetchStats(false)}
+              disabled={isLoadingStats}
+              className="brutal-sm flex items-center gap-2 border-[2.5px] border-cream bg-paper px-3 py-1.5 font-mono text-xs font-bold text-ink uppercase transition-transform hover:-translate-y-0.5 dark:border-obsidian dark:bg-void dark:text-cream cursor-pointer"
+            >
+              <RefreshCw className={`size-3.5 ${isLoadingStats ? "animate-spin" : ""}`} />
+              Sync Stats
+            </button>
+          </div>
         </div>
 
         {/* Live Overview Stats Cards */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
           {/* Card 1: Users */}
           <div className="brutal-sm border-[2.5px] border-cream bg-paper p-3 text-ink dark:border-obsidian dark:bg-void dark:text-cream">
             <div className="flex items-center justify-between">
@@ -97,7 +139,7 @@ export function AdminDashboard() {
               {isLoadingStats ? "..." : stats?.totalUsers ?? "—"}
             </div>
             <div className="mt-1 font-mono text-[10px] text-muted-foreground truncate">
-              {stats?.userRoles?.student ?? 0} Students • {stats?.userRoles?.cr ?? 0} CRs • {stats?.userRoles?.teacher ?? 0} Staff
+              {(stats?.userRoles?.student ?? stats?.usersByRole?.student ?? 0)} Students • {(stats?.userRoles?.cr ?? stats?.usersByRole?.cr ?? 0)} CRs • {(stats?.userRoles?.teacher ?? stats?.usersByRole?.teacher ?? 0)} Staff
             </div>
           </div>
 
@@ -113,7 +155,10 @@ export function AdminDashboard() {
               {isLoadingStats ? "..." : stats?.totalRooms ?? "—"}
             </div>
             <div className="mt-1 font-mono text-[10px] text-muted-foreground">
-              {stats?.freeRoomsRightNow ?? 0} Free Now • {stats?.totalRooms - (stats?.freeRoomsRightNow ?? 0)} Occupied
+              <span className="font-bold text-mint dark:text-obsidian">
+                {stats?.freeRoomsRightNow ?? 0} Free Now
+              </span>{" "}
+              • {Math.max(0, (stats?.totalRooms ?? 0) - (stats?.freeRoomsRightNow ?? 0))} Occupied
             </div>
           </div>
 
@@ -128,7 +173,7 @@ export function AdminDashboard() {
             <div className="font-display mt-2 text-2xl font-black">
               {isLoadingStats ? "..." : stats?.totalTimetable ?? "—"}
             </div>
-            <div className="mt-1 font-mono text-[10px] text-muted-foreground">
+            <div className="mt-1 font-mono text-[10px] text-muted-foreground truncate">
               Active timetable periods weekly
             </div>
           </div>
@@ -142,10 +187,26 @@ export function AdminDashboard() {
               <Package className="size-4 text-sun" />
             </div>
             <div className="font-display mt-2 text-2xl font-black">
-              {isLoadingStats ? "..." : stats?.lostFound?.total ?? "—"}
+              {isLoadingStats ? "..." : stats?.lostFound?.total ?? stats?.totalItems ?? "—"}
             </div>
-            <div className="mt-1 font-mono text-[10px] text-muted-foreground">
-              {stats?.lostFound?.open ?? 0} Open • {stats?.lostFound?.claimed ?? 0} In Claim
+            <div className="mt-1 font-mono text-[10px] text-muted-foreground truncate">
+              {(stats?.lostFound?.open ?? stats?.lostFoundByStatus?.open ?? 0)} Open • {(stats?.lostFound?.claimed ?? stats?.lostFoundByStatus?.claimed ?? 0)} In Claim
+            </div>
+          </div>
+
+          {/* Card 5: Polls & Democracy */}
+          <div className="brutal-sm col-span-2 sm:col-span-4 lg:col-span-1 border-[2.5px] border-cream bg-paper p-3 text-ink dark:border-obsidian dark:bg-void dark:text-cream">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                Active Polls
+              </span>
+              <Vote className="size-4 text-hyper" />
+            </div>
+            <div className="font-display mt-2 text-2xl font-black">
+              {isLoadingStats ? "..." : stats?.activePolls ?? "—"}
+            </div>
+            <div className="mt-1 font-mono text-[10px] text-muted-foreground truncate">
+              {stats?.totalPolls ?? 0} All-time • {stats?.activePolls ?? 0} Live Now
             </div>
           </div>
         </div>

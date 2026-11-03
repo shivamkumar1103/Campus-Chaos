@@ -10,12 +10,12 @@ const roomSchema = new mongoose.Schema(
     },
     building: {
       type: String,
-      default: "Main Building",
+      default: "Ramanujacharya Bhavana (RB)",
       trim: true,
     },
     type: {
       type: String,
-      enum: ["class", "lab"],
+      enum: ["class", "lab", "auditorium"],
       default: "class",
     },
     // Optional: floor number if you want floor-wise filtering later

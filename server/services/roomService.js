@@ -137,6 +137,8 @@ const getAvailableRooms = async ({ start: queryStart, end: queryEnd, block, buil
       type: room.type,
       floor: room.floor,
       status: isOccupied ? 'occupied' : 'free',
+      isAvailable: !isOccupied,
+      isOccupied,
       occupiedBy,
       activeBookingId,
       activeTimetableId,
@@ -173,6 +175,20 @@ const bookRoom = async ({ roomId, start, end, purpose }, user) => {
   if (start >= end) {
     const err = new Error('End time must be after start time');
     err.statusCode = 400;
+    throw err;
+  }
+
+  const room = await roomRepository.findRoomById(roomId);
+  if (!room) {
+    const err = new Error('Room not found');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  // Auditorium restriction: only admin can book
+  if (room.type === 'auditorium' && user?.role !== 'admin') {
+    const err = new Error('The Auditorium can only be booked by Campus Administrators.');
+    err.statusCode = 403;
     throw err;
   }
 

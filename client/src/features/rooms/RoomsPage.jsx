@@ -80,7 +80,7 @@ export function RoomsPage() {
   const initialTimes = getInitialTimes();
 
   const [filters, setFilters] = useState({
-    block: "Main Building",
+    block: "",
     floor: "",
     type: "",
     start: initialTimes.start,
@@ -201,7 +201,7 @@ export function RoomsPage() {
               </h1>
             </div>
             <p className="mt-1 text-muted-foreground text-xs font-mono">
-              Main Building · Live availability & timetable overrides for today (
+              {filters.block || "All Buildings (RB, SB, MB)"} · Live availability & timetable overrides for today (
               {new Date().toLocaleDateString("en-US", {
                 weekday: "long",
                 month: "short",
@@ -282,11 +282,14 @@ export function RoomsPage() {
                 <select
                   value={filters.block}
                   onChange={(e) =>
-                    setFilters((f) => ({ ...f, block: e.target.value }))
+                    setFilters((f) => ({ ...f, block: e.target.value, floor: "" }))
                   }
                   className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
                 >
-                  <option value="Main Building" className="bg-paper text-ink dark:bg-void dark:text-cream">Main Building</option>
+                  <option value="" className="bg-paper text-ink dark:bg-void dark:text-cream">All Buildings (RB, SB, MB)</option>
+                  <option value="Ramanujacharya Bhavana (RB)" className="bg-paper text-ink dark:bg-void dark:text-cream">Ramanujacharya Bhavana (RB)</option>
+                  <option value="Shankaracharya Bhavan (SB)" className="bg-paper text-ink dark:bg-void dark:text-cream">Shankaracharya Bhavan (SB)</option>
+                  <option value="Madhwacharya Bhavana (MB)" className="bg-paper text-ink dark:bg-void dark:text-cream">Madhwacharya Bhavana (MB)</option>
                 </select>
               </div>
 
@@ -302,11 +305,31 @@ export function RoomsPage() {
                   }
                   className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
                 >
-                  <option value="" className="bg-paper text-ink dark:bg-void dark:text-cream">All Floors (0–3)</option>
-                  <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (101-109, MB, Labs)</option>
-                  <option value="1" className="bg-paper text-ink dark:bg-void dark:text-cream">1st Floor (201-209)</option>
-                  <option value="2" className="bg-paper text-ink dark:bg-void dark:text-cream">2nd Floor (301-310)</option>
-                  <option value="3" className="bg-paper text-ink dark:bg-void dark:text-cream">3rd Floor (401-410)</option>
+                  <option value="" className="bg-paper text-ink dark:bg-void dark:text-cream">All Floors</option>
+                  {filters.block === "Ramanujacharya Bhavana (RB)" ? (
+                    <>
+                      <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (101-109)</option>
+                      <option value="1" className="bg-paper text-ink dark:bg-void dark:text-cream">1st Floor (201-209)</option>
+                      <option value="2" className="bg-paper text-ink dark:bg-void dark:text-cream">2nd Floor (301-310)</option>
+                      <option value="3" className="bg-paper text-ink dark:bg-void dark:text-cream">3rd Floor (401-410)</option>
+                    </>
+                  ) : filters.block === "Shankaracharya Bhavan (SB)" ? (
+                    <>
+                      <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (Auditorium)</option>
+                      <option value="1" className="bg-paper text-ink dark:bg-void dark:text-cream">1st Floor (AIML 1-4 &amp; MCA 1-3 Labs)</option>
+                      <option value="2" className="bg-paper text-ink dark:bg-void dark:text-cream">2nd Floor (CS Labs 1-8)</option>
+                      <option value="3" className="bg-paper text-ink dark:bg-void dark:text-cream">3rd Floor (IS Labs 1-8)</option>
+                    </>
+                  ) : filters.block === "Madhwacharya Bhavana (MB)" ? (
+                    <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (MB-01 to MB-05)</option>
+                  ) : (
+                    <>
+                      <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (RB, SB Auditorium, MB)</option>
+                      <option value="1" className="bg-paper text-ink dark:bg-void dark:text-cream">1st Floor (RB Classrooms, SB AIML/MCA)</option>
+                      <option value="2" className="bg-paper text-ink dark:bg-void dark:text-cream">2nd Floor (RB Classrooms, SB CS Labs)</option>
+                      <option value="3" className="bg-paper text-ink dark:bg-void dark:text-cream">3rd Floor (RB Classrooms, SB IS Labs)</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -322,9 +345,10 @@ export function RoomsPage() {
                   }
                   className="brutal-flat w-full h-10 px-3 text-xs font-mono font-semibold bg-paper text-ink dark:bg-void dark:text-cream border-border rounded cursor-pointer hover:bg-sun/20 dark:hover:bg-grape transition-colors"
                 >
-                  <option value="" className="bg-paper text-ink dark:bg-void dark:text-cream">All Types (Class & Lab)</option>
-                  <option value="class" className="bg-paper text-ink dark:bg-void dark:text-cream">Classroom Only</option>
-                  <option value="lab" className="bg-paper text-ink dark:bg-void dark:text-cream">Laboratory Only</option>
+                  <option value="" className="bg-paper text-ink dark:bg-void dark:text-cream">All Types (Class, Lab, Auditorium)</option>
+                  <option value="class" className="bg-paper text-ink dark:bg-void dark:text-cream">Classrooms Only</option>
+                  <option value="lab" className="bg-paper text-ink dark:bg-void dark:text-cream">Laboratories Only</option>
+                  <option value="auditorium" className="bg-paper text-ink dark:bg-void dark:text-cream">Auditorium Only</option>
                 </select>
               </div>
 
@@ -423,6 +447,19 @@ export function RoomsPage() {
             </div>
           </section>
 
+          {/* Active Time Window Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 brutal bg-paper dark:bg-void border-border rounded text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <Clock className="size-4 text-acid shrink-0" />
+              <span>
+                Target Time Window: <strong className="text-foreground text-sm font-bold font-display">{filters.start} — {filters.end}</strong> (Today)
+              </span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              Rooms below are evaluated for this window • Click Book Slot to reserve directly
+            </span>
+          </div>
+
           {/* Rooms Grid */}
           {isLoading ? (
             <div className="p-12 text-center text-muted-foreground font-mono flex items-center justify-center">
@@ -451,6 +488,7 @@ export function RoomsPage() {
                         key={room._id}
                         room={room}
                         canBook={true}
+                        timeSlot={`${filters.start} - ${filters.end}`}
                         onBook={() => setSelectedRoomForBooking(room)}
                       />
                     ))}
@@ -478,6 +516,7 @@ export function RoomsPage() {
                         key={room._id}
                         room={room}
                         canBook={false}
+                        timeSlot={`${filters.start} - ${filters.end}`}
                         occupiedBy={room.occupiedBy}
                         canCancelCurrent={room.canCancelCurrent}
                         activeBookingId={room.activeBookingId}

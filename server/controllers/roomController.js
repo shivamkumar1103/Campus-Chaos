@@ -41,6 +41,8 @@ const bookRoom = async (req, res) => {
   try {
     const { roomId, start, end, purpose } = req.body;
     const booking = await roomService.bookRoom({ roomId, start, end, purpose }, req.user);
+    req.app.get('io')?.emit('room_status_changed');
+    req.app.get('io')?.emit('admin_stats_changed');
     res.status(201).json({
       message: 'Room booked successfully',
       booking,
@@ -54,6 +56,8 @@ const bookRoom = async (req, res) => {
 const cancelBooking = async (req, res) => {
   try {
     const result = await roomService.cancelBooking(req.params.id, req.user);
+    req.app.get('io')?.emit('room_status_changed');
+    req.app.get('io')?.emit('admin_stats_changed');
     res.json(result);
   } catch (err) {
     res.status(err.statusCode || 500).json({ message: err.message || 'Server error' });
@@ -65,6 +69,8 @@ const cancelTimetableSlot = async (req, res) => {
   try {
     const { timetableId } = req.body;
     const cancelBooking = await roomService.cancelTimetableSlot(timetableId, req.user);
+    req.app.get('io')?.emit('room_status_changed');
+    req.app.get('io')?.emit('admin_stats_changed');
     res.json({
       message: 'Timetable slot cancelled',
       cancelBooking,
