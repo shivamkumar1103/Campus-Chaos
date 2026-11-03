@@ -18,16 +18,36 @@ const adminRoutes = require('./routes/adminRoutes');
 const pollRoutes = require('./routes/pollRoutes');
 
 const app = express();
+app.set('trust proxy', 1); // Trust reverse proxy (Render, Railway, Heroku) for secure cookies
+
+const clientUrls = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((u) => u.trim());
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      clientUrls.includes(origin) ||
+      /\.vercel\.app$/.test(origin) ||
+      origin.includes('localhost')
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+};
+
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173', methods: ['GET', 'POST'] },
-});
+const io = new Server(server, { cors: corsOptions });
 
 app.set('io', io);
 
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

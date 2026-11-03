@@ -10,7 +10,9 @@ export function SocketProvider({ children }) {
   const [onlineUserIds, setOnlineUserIds] = useState([]);
 
   useEffect(() => {
-    const defaultUrl = `${window.location.protocol}//${window.location.hostname}:5000`;
+    const defaultUrl = window.location.port === '5173'
+      ? `${window.location.protocol}//${window.location.hostname}:5000`
+      : window.location.origin;
     const url = import.meta.env.VITE_SOCKET_URL || defaultUrl;
     const s = io(url);
     setSocket(s);

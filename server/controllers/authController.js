@@ -7,7 +7,7 @@ const isProd = process.env.NODE_ENV === 'production';
 const cookieOptions = () => ({
   httpOnly: true,
   secure: isProd, // https only in production
-  sameSite: process.env.COOKIE_SAMESITE || 'lax',
+  sameSite: process.env.COOKIE_SAMESITE || (isProd ? 'none' : 'lax'), // 'none' required for cross-domain on Vercel + Render
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7d, matches JWT_EXPIRES_IN default
   path: '/',
 });
