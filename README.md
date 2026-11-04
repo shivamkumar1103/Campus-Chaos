@@ -1,67 +1,131 @@
-# Campus Chaos — Your Unified College Operating System
+# 🎓 Campus Chaos — Unified College Operating System
 
-Batch C8 — NIE Mysuru. Centralized hub for Lost & Found, real-time messaging,
-Room & Lab availability, polls/CR elections, with role-based access
-(Admin, Teacher, CR, Student).
+> **Batch C8 — The National Institute of Engineering (NIE), Mysuru.**  
+> A centralized, real-time operating system for campus life — unifying Lost & Found, live chat & peer messaging, room & lab availability tracking, transparent student polls & CR elections, and administrative governance with granular role-based access control (Admin, Teacher, CR, Student).
 
-## Stack
-- Frontend: React 19 via Vite + Tailwind CSS (`client/`)
-- Backend: Node + Express REST API + Socket.io (`server/`)
-- DB: MongoDB via Mongoose (local now, Atlas when you connect)
-- Auth: JWT + bcryptjs, RBAC middleware
+---
 
-## Structure
-```
+## 👥 Authors & Credits
+
+Campus Chaos was designed and developed by:
+
+- **Shivam Kumar** ([@shivamkumar1103](https://github.com/shivamkumar1103))
+- **Saaim Khan** ([@saaimkhan2006](https://github.com/saaimkhan2006))
+
+---
+
+## ✨ Features
+
+- 🔍 **Lost & Found Hub**: Post lost/found items with image attachments, categories, claiming workflow, and verification.
+- 💬 **Real-time Messaging**: Instant peer-to-peer messaging, live presence indicators, typing status, conversation histories, and unread badges powered by Socket.io.
+- 🏫 **Room & Lab Availability**: Live tracking of campus classrooms, laboratories, and dynamic timetable scheduling.
+- 🗳️ **Polls & CR Elections**: Class representative nominations, real-time voting, and transparent election results.
+- 🛡️ **Role-Based Access Control (RBAC)**: Distinct views and capabilities tailored for **Students**, **CRs**, **Faculty**, and **Admins**.
+- ✉️ **Secure Authentication**: JWT with secure HTTP-only cookies, bcrypt password hashing, and email verification support.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: React 19 via Vite
+- **Styling**: Tailwind CSS
+- **Icons & UI**: Lucide React
+- **Real-Time Client**: Socket.io-client
+
+### Backend
+- **Runtime**: Node.js & Express REST API
+- **WebSockets**: Socket.io
+- **Database**: MongoDB via Mongoose
+- **Authentication**: JWT (JSON Web Tokens) with `httpOnly` cookies & bcryptjs
+- **File Uploads**: Multer
+- **Mailing**: Nodemailer (Mailtrap for development / Brevo for production)
+
+---
+
+## 📂 Project Structure
+
+```text
 Campus-Chaos/
-├── client/   # Vite + React frontend
-├── server/   # Express + Socket.io backend
+├── client/                 # Frontend React 19 + Vite application
+│   ├── src/
+│   │   ├── features/       # Feature slices (admin, auth, lost-found, messaging, polls, rooms)
+│   │   ├── components/     # Shared UI components
+│   │   ├── context/        # React context providers (Auth, Socket)
+│   │   └── ...
+├── server/                 # Backend Node.js Express REST API & WebSockets
+│   ├── controllers/        # Request handlers
+│   ├── models/             # Mongoose schemas (User, LostFound, Room, Poll, Message, etc.)
+│   ├── routes/             # Express API routes
+│   ├── middleware/         # Auth, RBAC, and error handlers
+│   ├── seed/               # Database seed scripts
+│   └── socket/             # Socket.io event handlers
 ```
 
-## Quick start (2 terminals)
+---
 
-1) Backend:
+## 🚀 Quick Start
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [MongoDB](https://www.mongodb.com/) (local daemon or MongoDB Atlas cluster URI)
+
+---
+
+### 1. Backend Setup
+
 ```bash
 cd server
-copy .env.example .env   # Windows (or cp on mac/linux), then edit MONGO_URI + JWT_SECRET
-npm install
-npm run dev              # http://localhost:5000, health: GET /api/health
-```
 
-2) Frontend:
-```bash
-cd client
-npm install
-npm run dev              # http://localhost:5173 (proxies /api -> :5000)
-```
+# Copy environment template
+cp .env.example .env    # On Windows: copy .env.example .env
 
-3) Seed demo data (needs MongoDB running):
-```bash
-cd server
+# Install dependencies
+npm install
+
+# Seed demo data (users, rooms, timetable, sample items)
 npm run seed
-```
-Seeds Saaim, Shivam, Shariq, Shreyas + 2 sample Lost & Found items (password: `password123`).
 
-## Connecting GitHub
+# Start development server (runs on http://localhost:5000)
+npm run dev
+```
+
+> **Demo Credentials (after seeding):**
+> - **Student (Shivam):** `2024cs_shivamkumar_c@nie.ac.in` / `password123`
+> - **Student (Saaim):** `2024cs_saaimkhan_c@nie.ac.in` / `password123`
+> - **Admin:** `admin@nie.ac.in` / `admin123`
+
+---
+
+### 2. Frontend Setup
+
 ```bash
-cd D:\Campus-Chaos
-git init
-git add .
-git commit -m "chore: scaffold client (Vite+React) and server (Express+Socket.io)"
-git branch -M main
-git remote add origin https://github.com/<you>/campus-chaos.git
-git push -u origin main
+# In a new terminal window
+cd client
+
+# Install dependencies
+npm install
+
+# Start Vite development server (runs on http://localhost:5173)
+npm run dev
 ```
 
-## Connecting MongoDB
-- Local: install MongoDB Community + Compass, keep `MONGO_URI=mongodb://127.0.0.1:27017/campus-chaos`
-- Atlas: create free cluster → Network Access allow your IP → get connection string →
-  put it in `server/.env` as `MONGO_URI=mongodb+srv://...` → `npm run seed` → `npm run dev`
+The frontend Vite server automatically proxies `/api` calls and WebSockets to `http://localhost:5000`.
 
-## API (v1 foundation)
-- `GET /api/health`
-- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
-- `GET /api/lost-found?q=&type=&category=&status=`, `GET /api/lost-found/:id`,
-  `POST /api/lost-found` (auth + multipart `image`), `POST /api/lost-found/:id/claim`,
-  `PATCH /api/lost-found/:id/status`, `DELETE /api/lost-found/:id`
-- `GET /api/messages/conversations`, `GET /api/messages/history/:otherUserId`
-- Socket.io: `join`, `send_message` → `receive_message`/`message_saved`, `typing`/`stop_typing`, `mark_as_read`, `presence`
+---
+
+## 🌐 API Overview
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/health` | `GET` | Health check probe |
+| `/api/auth/register` | `POST` | Register a new user |
+| `/api/auth/login` | `POST` | Authenticate user & issue cookie / JWT |
+| `/api/auth/me` | `GET` | Fetch currently authenticated user session |
+| `/api/lost-found` | `GET`, `POST` | Query items or submit new item (with image) |
+| `/api/lost-found/:id/claim` | `POST` | Claim an item |
+| `/api/messages/conversations` | `GET` | List active user message threads |
+| `/api/messages/history/:id` | `GET` | Fetch chat history with specific user |
+| `/api/rooms` | `GET` | Check room availability & timetables |
+| `/api/polls` | `GET`, `POST` | View and create election / campus polls |
+| `/api/admin/*` | `*` | Administrative management & analytics |
