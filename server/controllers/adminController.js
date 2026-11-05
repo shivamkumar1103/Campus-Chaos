@@ -493,10 +493,19 @@ const uploadTimetableCsv = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Cache existing rooms and teachers for fast matching
-  const allRooms = await Room.find({});
-  const roomMap = new Map();
-  allRooms.forEach((r) => roomMap.set(r.name.trim().toLowerCase(), r));
+    // Cache existing rooms and teachers for fast matching
+    const allRooms = await Room.find({});
+    const roomMap = new Map();
+    allRooms.forEach((r) => {
+      roomMap.set(r.name.trim().toLowerCase(), r);
+      if (r.name.startsWith("MB-0")) {
+        const num = r.name.slice(-1);
+        roomMap.set(`mb${num}`, r);
+        roomMap.set(`mb0${num}`, r);
+        roomMap.set(`mb-${num}`, r);
+        roomMap.set(`mb-0${num}`, r);
+      }
+    });
 
   const allTeachers = await User.find({ role: { $in: ["teacher", "admin"] } });
   const teacherMap = new Map();
