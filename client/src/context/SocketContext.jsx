@@ -17,10 +17,21 @@ export function SocketProvider({ children }) {
       ? `${window.location.protocol}//${window.location.hostname}:5000`
       : fallbackFromApi || window.location.origin;
     const url = import.meta.env.VITE_SOCKET_URL || defaultUrl;
-    const s = io(url, { withCredentials: true, transports: ['websocket', 'polling'] });
+
+    // Use polling first then upgrade to websocket to avoid premature interrupted WebSocket errors
+    const s = io(url, {
+      withCredentials: true,
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
     setSocket(s);
     s.on('presence', (ids) => setOnlineUserIds(ids));
-    return () => s.disconnect();
+
+    return () => {
+      s.disconnect();
+    };
   }, []);
 
   useEffect(() => {

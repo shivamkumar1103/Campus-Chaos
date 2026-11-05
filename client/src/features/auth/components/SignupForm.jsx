@@ -25,6 +25,7 @@ export function SignupForm({ onSuccess }) {
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [resending, setResending] = useState(false);
   const [resendStatus, setResendStatus] = useState('');
+  const [deliveryNotice, setDeliveryNotice] = useState('');
 
   const error = clientError || register.error?.response?.data?.message;
 
@@ -56,6 +57,9 @@ export function SignupForm({ onSuccess }) {
           if (data?.requiresVerification) {
             setIsSuccess(true);
             setRegisteredEmail(trimmedEmail.toLowerCase());
+            if (data?.emailSent === false) {
+              setDeliveryNotice('Note: Outbound SMTP ports (587) are blocked on Render Free Tier. If you are deploying on Render, you can find the direct verification link in your Render Dashboard Logs or set BREVO_API_KEY.');
+            }
           } else if (data?.user) {
             onSuccess?.();
           }
@@ -102,6 +106,11 @@ export function SignupForm({ onSuccess }) {
           <p className="text-xs leading-relaxed text-muted-foreground">
             Click the link in the email to activate your account. Links expire after 24 hours.
           </p>
+          {deliveryNotice && (
+            <div className="brutal-sm border border-sun bg-sun/15 p-2.5 text-[11px] leading-snug text-ink dark:text-cream">
+              {deliveryNotice}
+            </div>
+          )}
           {resendStatus && (
             <p className="brutal-sm bg-sun p-2 text-xs font-bold text-ink">
               {resendStatus}

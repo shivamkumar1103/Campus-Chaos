@@ -68,17 +68,22 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
     const verificationUrl = `${clientUrl}/verify-email?token=${rawToken}`;
     console.log(`\n🔗 [EMAIL VERIFICATION LINK] (${existingUser.email}):\n${verificationUrl}\n`);
 
+    let emailSent = false;
     try {
       await new EmailUtils(existingUser, verificationUrl).sendVerificationEmail();
+      emailSent = true;
     } catch (emailErr) {
-      console.error('Failed to send verification email:', emailErr);
-      throw new AppError('Account updated, but failed to send verification email. Please try resending verification.', 500, true);
+      console.error('⚠️ [EMAIL DISPATCH NOTICE]: Could not deliver verification email via SMTP/API:', emailErr.message);
+      console.log(`🔗 [MANUAL VERIFICATION LINK] (${existingUser.email}):\n${verificationUrl}\n`);
     }
 
     return {
-      message: 'Account updated. Please check your email inbox to verify your account.',
+      message: emailSent
+        ? 'Account updated. Please check your email inbox to verify your account.'
+        : 'Account updated! If verification email is delayed on Render Free Tier, please check server logs for direct verification link.',
       email: trimmedEmail,
       requiresVerification: true,
+      emailSent,
     };
   }
 
@@ -101,17 +106,22 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
   const verificationUrl = `${clientUrl}/verify-email?token=${rawToken}`;
   console.log(`\n🔗 [EMAIL VERIFICATION LINK] (${user.email}):\n${verificationUrl}\n`);
 
+  let emailSent = false;
   try {
     await new EmailUtils(user, verificationUrl).sendVerificationEmail();
+    emailSent = true;
   } catch (emailErr) {
-    console.error('Failed to send verification email:', emailErr);
-    throw new AppError('Account created, but failed to send verification email. Please try resending verification.', 500, true);
+    console.error('⚠️ [EMAIL DISPATCH NOTICE]: Could not deliver verification email via SMTP/API:', emailErr.message);
+    console.log(`🔗 [MANUAL VERIFICATION LINK] (${user.email}):\n${verificationUrl}\n`);
   }
 
   return {
-    message: 'Registration successful! Please check your email to verify your account.',
+    message: emailSent
+      ? 'Registration successful! Please check your email to verify your account.'
+      : 'Registration successful! If verification email is delayed on Render Free Tier, please check server logs for direct verification link.',
     email: user.email,
     requiresVerification: true,
+    emailSent,
   };
 };
 
@@ -164,11 +174,21 @@ const resendVerificationEmail = async (email) => {
   const verificationUrl = `${clientUrl}/verify-email?token=${rawToken}`;
   console.log(`\n🔗 [EMAIL VERIFICATION LINK] (${user.email}):\n${verificationUrl}\n`);
 
-  await new EmailUtils(user, verificationUrl).sendVerificationEmail();
+  let emailSent = false;
+  try {
+    await new EmailUtils(user, verificationUrl).sendVerificationEmail();
+    emailSent = true;
+  } catch (emailErr) {
+    console.error('⚠️ [EMAIL RESEND NOTICE]: Could not deliver verification email via SMTP/API:', emailErr.message);
+    console.log(`🔗 [MANUAL VERIFICATION LINK] (${user.email}):\n${verificationUrl}\n`);
+  }
 
   return {
-    message: 'A fresh verification link has been sent to your email.',
+    message: emailSent
+      ? 'A fresh verification link has been sent to your email.'
+      : 'Verification link generated! Check your Render server logs if SMTP port is blocked.',
     email: user.email,
+    emailSent,
   };
 };
 

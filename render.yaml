@@ -24,6 +24,10 @@ services:
         value: none
       - key: EMAIL_FROM
         value: noreply@campuschaos.edu
+      # Recommended on Render Free tier (outbound SMTP ports 25/465/587 are blocked by Render):
+      - key: BREVO_API_KEY
+        sync: false
+      # Traditional Brevo SMTP fallback:
       - key: BREVO_HOST
         value: smtp-relay.brevo.com
       - key: BREVO_PORT
