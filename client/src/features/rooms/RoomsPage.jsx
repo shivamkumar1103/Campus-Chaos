@@ -308,8 +308,9 @@ export function RoomsPage() {
                   <option value="" className="bg-paper text-ink dark:bg-void dark:text-cream">All Floors</option>
                   {filters.block === "Ramanujacharya Bhavana (RB)" ? (
                     <>
+                      <option value="-1" className="bg-paper text-ink dark:bg-void dark:text-cream">Underground / Basement (Chemistry Lab)</option>
                       <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (101-109)</option>
-                      <option value="1" className="bg-paper text-ink dark:bg-void dark:text-cream">1st Floor (201-209)</option>
+                      <option value="1" className="bg-paper text-ink dark:bg-void dark:text-cream">1st Floor (201-209 &amp; Physics Lab)</option>
                       <option value="2" className="bg-paper text-ink dark:bg-void dark:text-cream">2nd Floor (301-310)</option>
                       <option value="3" className="bg-paper text-ink dark:bg-void dark:text-cream">3rd Floor (401-410)</option>
                     </>
@@ -321,11 +322,12 @@ export function RoomsPage() {
                       <option value="3" className="bg-paper text-ink dark:bg-void dark:text-cream">3rd Floor (IS Labs 1-8)</option>
                     </>
                   ) : filters.block === "Madhwacharya Bhavana (MB)" ? (
-                    <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (MB-01 to MB-05)</option>
+                    <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (MB-01 to MB-05 &amp; IDT Lab)</option>
                   ) : (
                     <>
-                      <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (RB, SB Auditorium, MB)</option>
-                      <option value="1" className="bg-paper text-ink dark:bg-void dark:text-cream">1st Floor (RB Classrooms, SB AIML/MCA)</option>
+                      <option value="-1" className="bg-paper text-ink dark:bg-void dark:text-cream">Underground / Basement (RB Chemistry Lab)</option>
+                      <option value="0" className="bg-paper text-ink dark:bg-void dark:text-cream">Ground Floor (RB, SB Auditorium, MB Classrooms &amp; IDT Lab)</option>
+                      <option value="1" className="bg-paper text-ink dark:bg-void dark:text-cream">1st Floor (RB Classrooms &amp; Physics Lab, SB AIML/MCA)</option>
                       <option value="2" className="bg-paper text-ink dark:bg-void dark:text-cream">2nd Floor (RB Classrooms, SB CS Labs)</option>
                       <option value="3" className="bg-paper text-ink dark:bg-void dark:text-cream">3rd Floor (RB Classrooms, SB IS Labs)</option>
                     </>
@@ -428,7 +430,7 @@ export function RoomsPage() {
                 Filtering: <strong className="text-foreground">{filters.start}</strong>{" "}
                 to <strong className="text-foreground">{filters.end}</strong>
                 {filters.floor !== "" && (
-                  <> · Floor: <strong className="text-foreground">{filters.floor === "0" ? "Ground" : filters.floor}</strong></>
+                  <> · Floor: <strong className="text-foreground">{filters.floor === "-1" ? "Underground" : filters.floor === "0" ? "Ground" : filters.floor}</strong></>
                 )}
                 {filters.type && (
                   <> · Type: <strong className="text-foreground">{filters.type === "class" ? "Classroom" : "Lab"}</strong></>

@@ -17,6 +17,7 @@ import { useConversations } from '../features/messaging/hooks/useMessaging';
 import { Button } from './ui/button';
 import { ThemeToggle } from './design/ThemeToggle';
 import { Ticker } from './design/kinetic';
+import { SidebarInstallButton } from './InstallPwaPrompt';
 import { cn } from '../lib/utils';
 
 const links = [
@@ -100,6 +101,8 @@ function SidebarBody({ backendStatus, onNavigate }) {
         </p>
         <p className="mt-1 text-[12px] leading-snug font-semibold">Found something? Post it before the canteen rush. Karma is instant.</p>
       </div>
+
+      <SidebarInstallButton />
 
       <div className="mt-auto space-y-2.5 border-t-[3px] border-dashed border-[var(--ink-line)] pt-3">
         <div className="flex items-center justify-between gap-2">

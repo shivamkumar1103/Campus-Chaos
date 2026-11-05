@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { TriangleAlert } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { Ticker } from './design/kinetic';
+import { InstallPwaBanner } from './InstallPwaPrompt';
 import api from '../utils/api';
 
 export function MainLayout() {
@@ -26,6 +27,7 @@ export function MainLayout() {
     <div className="grain min-h-screen md:flex">
       <Sidebar backendStatus={backendStatus} />
       <main className="min-w-0 flex-1 px-3 py-4 sm:px-5 md:mx-auto md:w-full md:max-w-6xl md:py-6">
+        <InstallPwaBanner />
         {backendStatus.startsWith('offline') && (
           <div className="brutal-sm mb-4 flex items-center gap-2 bg-hyper p-2.5 text-[13px] font-bold text-white">
             <TriangleAlert className="size-4 shrink-0" />

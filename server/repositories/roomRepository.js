@@ -1,6 +1,7 @@
 const Room = require('../models/Room');
 const RoomBooking = require('../models/RoomBooking');
 const TimetableEntry = require('../models/TimetableEntry');
+const User = require('../models/User');
 
 // Repository = data-access only. No business rules, no HTTP.
 

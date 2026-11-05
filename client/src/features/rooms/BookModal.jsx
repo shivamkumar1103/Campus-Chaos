@@ -102,7 +102,7 @@ export function BookModal({
             </h2>
             <p className="text-muted-foreground text-xs mt-1 font-mono flex items-center gap-1.5">
               <Building2 className="size-3.5 text-acid" />
-              {room.building} · Floor {room.floor === 0 ? "Ground" : room.floor} ·{" "}
+              {room.building} · {room.floor === -1 ? "Underground Level" : `Floor ${room.floor === 0 ? "Ground" : room.floor}`} ·{" "}
               {room.type === "auditorium"
                 ? "Auditorium"
                 : room.type === "class"

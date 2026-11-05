@@ -497,7 +497,38 @@ const uploadTimetableCsv = catchAsync(async (req, res, next) => {
     const allRooms = await Room.find({});
     const roomMap = new Map();
     allRooms.forEach((r) => {
-      roomMap.set(r.name.trim().toLowerCase(), r);
+      const lower = r.name.trim().toLowerCase();
+      roomMap.set(lower, r);
+      if (lower.includes("lab ")) {
+        roomMap.set(lower.replace("lab ", "lab-"), r);
+      }
+      if (lower.includes("lab-")) {
+        roomMap.set(lower.replace("lab-", "lab "), r);
+      }
+      if (lower === "chemistry lab") {
+        roomMap.set("che lab", r);
+        roomMap.set("che-lab", r);
+        roomMap.set("che lab-1", r);
+        roomMap.set("che lab-2", r);
+        roomMap.set("che lab 1", r);
+        roomMap.set("che lab 2", r);
+        roomMap.set("chemistry lab 1", r);
+        roomMap.set("chemistry lab 2", r);
+      }
+      if (lower === "physics lab") {
+        roomMap.set("phy lab", r);
+        roomMap.set("phy-lab", r);
+        roomMap.set("phy lab-1", r);
+        roomMap.set("phy lab-2", r);
+        roomMap.set("phy lab 1", r);
+        roomMap.set("phy lab 2", r);
+        roomMap.set("physics lab 1", r);
+        roomMap.set("physics lab 2", r);
+      }
+      if (lower === "idt lab") {
+        roomMap.set("idt-lab", r);
+        roomMap.set("idt lab 1", r);
+      }
       if (r.name.startsWith("MB-0")) {
         const num = r.name.slice(-1);
         roomMap.set(`mb${num}`, r);

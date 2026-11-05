@@ -80,7 +80,7 @@ export function MyBookings({ onBookingChanged }) {
               </div>
 
               <p className="text-muted-foreground text-xs font-mono mb-3">
-                {booking.room?.building || "Campus Facility"} · Floor {booking.room?.floor === 0 ? "Ground" : booking.room?.floor ?? "Ground"}
+                {booking.room?.building || "Campus Facility"} · {booking.room?.floor === -1 ? "Underground Level" : `Floor ${booking.room?.floor === 0 ? "Ground" : booking.room?.floor ?? "Ground"}`}
               </p>
 
               <div className="bg-black/5 dark:bg-white/5 p-3 rounded space-y-1.5 text-xs font-mono mb-4 border border-border/40">

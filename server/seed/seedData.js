@@ -1,4 +1,6 @@
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const LostFoundItem = require('../models/LostFoundItem');
@@ -83,8 +85,11 @@ const run = async () => {
   // - Madhwacharya Bhavana (MB): Ground Floor Classrooms (MB-01 to MB-05)
   const roomDefs = [
     // =========================================================
-    // 1. Ramanujacharya Bhavana (RB) — Classrooms Only
+    // 1. Ramanujacharya Bhavana (RB) — Classrooms & Labs
     // =========================================================
+    // Underground / Basement Floor (Floor -1): Chemistry Lab
+    { name: 'Chemistry Lab', building: 'Ramanujacharya Bhavana (RB)', floor: -1, type: 'lab' },
+
     // Ground Floor (Floor 0)
     { name: '101', building: 'Ramanujacharya Bhavana (RB)', floor: 0, type: 'class' },
     { name: '106', building: 'Ramanujacharya Bhavana (RB)', floor: 0, type: 'class' },
@@ -92,13 +97,14 @@ const run = async () => {
     { name: '108', building: 'Ramanujacharya Bhavana (RB)', floor: 0, type: 'class' },
     { name: '109', building: 'Ramanujacharya Bhavana (RB)', floor: 0, type: 'class' },
 
-    // 1st Floor (Floor 1): 201 to 209
+    // 1st Floor (Floor 1): 201 to 209 + Physics Lab
     ...Array.from({ length: 9 }, (_, i) => ({
       name: `${201 + i}`,
       building: 'Ramanujacharya Bhavana (RB)',
       floor: 1,
       type: 'class',
     })),
+    { name: 'Physics Lab', building: 'Ramanujacharya Bhavana (RB)', floor: 1, type: 'lab' },
 
     // 2nd Floor (Floor 2): 301 to 310
     ...Array.from({ length: 10 }, (_, i) => ({
@@ -153,15 +159,16 @@ const run = async () => {
     })),
 
     // =========================================================
-    // 3. Madhwacharya Bhavana (MB) — Ground Floor Classes Only
+    // 3. Madhwacharya Bhavana (MB) — Ground Floor Classes & IDT Lab
     // =========================================================
-    // Ground Floor (Floor 0): MB-01 to MB-05
+    // Ground Floor (Floor 0): MB-01 to MB-05 + IDT Lab
     ...Array.from({ length: 5 }, (_, i) => ({
       name: `MB-0${i + 1}`,
       building: 'Madhwacharya Bhavana (MB)',
       floor: 0,
       type: 'class',
     })),
+    { name: 'IDT Lab', building: 'Madhwacharya Bhavana (MB)', floor: 0, type: 'lab' },
   ];
 
   const roomMap = {};
@@ -174,6 +181,28 @@ const run = async () => {
     }
     if (r.name.includes('Lab-')) {
       roomMap[r.name.replace('Lab-', 'Lab ')] = created;
+    }
+    if (r.name === 'Chemistry Lab') {
+      roomMap['CHE Lab'] = created;
+      roomMap['CHE LAB'] = created;
+      roomMap['CHE-Lab'] = created;
+      roomMap['CHE LAB-1'] = created;
+      roomMap['CHE LAB-2'] = created;
+      roomMap['Chemistry Lab 1'] = created;
+      roomMap['Chemistry Lab 2'] = created;
+    }
+    if (r.name === 'Physics Lab') {
+      roomMap['PHY Lab'] = created;
+      roomMap['PHY LAB'] = created;
+      roomMap['PHY-Lab'] = created;
+      roomMap['PHY LAB-1'] = created;
+      roomMap['PHY LAB-2'] = created;
+      roomMap['Physics Lab 1'] = created;
+      roomMap['Physics Lab 2'] = created;
+    }
+    if (r.name === 'IDT Lab') {
+      roomMap['IDT LAB'] = created;
+      roomMap['IDT-Lab'] = created;
     }
     if (r.name.startsWith('MB-0')) {
       const num = r.name.slice(-1);
@@ -411,6 +440,61 @@ const run = async () => {
   await TimetableEntry.insertMany(timetable);
   console.log(`Inserted ${timetable.length} Timetable entries for 5th Sem CSE & AIML.`);
 
+  // 3b. Import 1st and 3rd Sem Timetables from CSV
+  const parseAndInsertCsvTimetable = async (csvFileName) => {
+    const filePath = path.resolve(__dirname, '../../timetables', csvFileName);
+    if (!fs.existsSync(filePath)) {
+      console.warn(`File not found: ${filePath}`);
+      return 0;
+    }
+    const content = fs.readFileSync(filePath, 'utf8').trim();
+    const rows = content.split('\n').slice(1);
+    const docs = [];
+    for (const row of rows) {
+      if (!row.trim()) continue;
+      const parts = row.split(',').map(s => s.trim());
+      if (parts.length < 8) continue;
+      const [roomStr, day, start, end, subject, teacherStr, classKey, semester] = parts;
+      
+      let roomId = null;
+      if (roomStr) {
+        if (roomMap[roomStr]) {
+          roomId = roomMap[roomStr]._id;
+        } else {
+          const normalized = roomStr.replace(/\s+/g, ' ');
+          if (roomMap[normalized]) {
+            roomId = roomMap[normalized]._id;
+          }
+        }
+      }
+
+      let teacherId = null;
+      if (teacherStr && userMap[teacherStr]) {
+        teacherId = userMap[teacherStr]._id;
+      }
+
+      docs.push({
+        room: roomId,
+        day,
+        start,
+        end,
+        subject,
+        teacherId,
+        classKey,
+        semester
+      });
+    }
+
+    if (docs.length > 0) {
+      await TimetableEntry.insertMany(docs);
+      console.log(`Imported ${docs.length} entries from ${csvFileName}`);
+    }
+    return docs.length;
+  };
+
+  await parseAndInsertCsvTimetable('1st_sem_timetable_complete.csv');
+  await parseAndInsertCsvTimetable('3rd_sem_timetable_complete.csv');
+
   // 4. Seed Interactive Polls (CR Election + Campus Flash Poll)
   const adminUser = userMap['Campus Admin'];
   const saaim = userMap['Saaim Khan'];
@@ -464,7 +548,8 @@ const run = async () => {
 
   console.log('\n--- SEED COMPLETE ---');
   console.log('Total Rooms:', Object.keys(roomMap).length);
-  console.log('Total Timetable Entries:', timetable.length);
+  const totalEntries = await TimetableEntry.countDocuments();
+  console.log('Total Timetable Entries:', totalEntries);
   console.log('Total Polls:', pollsToInsert.length);
   process.exit(0);
 };

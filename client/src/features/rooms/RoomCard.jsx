@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui";
 import { useState } from "react";
-import { Clock, Calendar, Check, X, ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function RoomCard({
@@ -36,7 +36,9 @@ export function RoomCard({
   };
 
   const floorLabel =
-    room.floor === 0
+    room.floor === -1
+      ? "Underground / Basement"
+      : room.floor === 0
       ? "Ground Floor"
       : room.floor === 1
       ? "1st Floor"

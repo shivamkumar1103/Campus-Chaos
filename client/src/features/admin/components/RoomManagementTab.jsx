@@ -269,10 +269,10 @@ export function RoomManagementTab() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="block uppercase text-foreground mb-1 font-bold">Floor (0=Ground)</Label>
+                  <Label className="block uppercase text-foreground mb-1 font-bold">Floor (0=Ground, -1=UG)</Label>
                   <Input
                     type="number"
-                    min="0"
+                    min="-1"
                     max="10"
                     required
                     value={formData.floor}

@@ -87,6 +87,7 @@ const getAvailableRooms = async ({ start: queryStart, end: queryEnd, block, buil
     // Check active timetable entries that overlap checkStart/checkEnd and are NOT cancelled
     const activeTimetable = timetableEntries.filter(
       (entry) =>
+        entry.room &&
         entry.room.toString() === roomIdStr &&
         !cancelledTimetableIds.has(entry._id.toString()) &&
         hasOverlap(entry.start, entry.end, checkStart, checkEnd)
@@ -95,6 +96,7 @@ const getAvailableRooms = async ({ start: queryStart, end: queryEnd, block, buil
     // Check active adhoc bookings that overlap checkStart/checkEnd
     const activeAdhoc = adhocBookings.filter(
       (booking) =>
+        booking.room &&
         booking.room.toString() === roomIdStr &&
         hasOverlap(booking.start, booking.end, checkStart, checkEnd)
     );
@@ -286,7 +288,7 @@ const cancelTimetableSlot = async (timetableId, user) => {
     }
   } else if (user.role === 'teacher') {
     // Teacher can only cancel their own slots
-    if (entry.teacherId.toString() !== user._id.toString()) {
+    if (!entry.teacherId || entry.teacherId.toString() !== user._id.toString()) {
       throw new AppError('You can only cancel your own classes', 403);
     }
   } else if (user.role !== 'admin') {

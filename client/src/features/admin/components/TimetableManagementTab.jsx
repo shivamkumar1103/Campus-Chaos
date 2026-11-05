@@ -20,6 +20,10 @@ const DAYS = ["All", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Sa
 const ALL_SEMESTERS = ["All", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"];
 
 const SECTIONS_BY_SEM = {
+  "1st": [
+    "CSE-1A", "CSE-1B", "CSE-1C", "CSE-1D", "CSE-1E", "CSE-1F", "CSE-1G", "CSE-1H",
+    "AIML-1A", "AIML-1B"
+  ],
   "3rd": [
     "CSE-3A", "CSE-3B", "CSE-3C", "CSE-3D", "CSE-3E", "CSE-3F", "CSE-3G", "CSE-3H",
     "AIML-3A", "AIML-3B"
@@ -304,6 +308,13 @@ export function TimetableManagementTab() {
                 <option value="All">All Sections</option>
                 {semesterFilter === "All" ? (
                   <>
+                    <optgroup label="1st Semester">
+                      {SECTIONS_BY_SEM["1st"]?.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </optgroup>
                     <optgroup label="3rd Semester">
                       {SECTIONS_BY_SEM["3rd"]?.map((c) => (
                         <option key={c} value={c}>
