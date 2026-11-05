@@ -129,3 +129,15 @@ The frontend Vite server automatically proxies `/api` calls and WebSockets to `h
 | `/api/rooms` | `GET` | Check room availability & timetables |
 | `/api/polls` | `GET`, `POST` | View and create election / campus polls |
 | `/api/admin/*` | `*` | Administrative management & analytics |
+
+
+---
+
+## 🚢 Production Deployment
+
+Campus Chaos is configured for production deployment on **Vercel** (Frontend) and **Render** (Backend):
+
+- **Render Backend**: Uses Blueprint (`render.yaml`) or Web Service with `rootDir: server`, automatic `/api/health` monitoring, CORS allowlist for `*.vercel.app`, and `SameSite=None; Secure` cross-domain cookies.
+- **Vercel Frontend**: Uses `client/vercel.json` SPA rewrite rules and Vite production build.
+
+👉 **See the complete step-by-step instructions in [DEPLOYMENT.md](DEPLOYMENT.md).**

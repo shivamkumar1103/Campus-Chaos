@@ -10,11 +10,14 @@ export function SocketProvider({ children }) {
   const [onlineUserIds, setOnlineUserIds] = useState([]);
 
   useEffect(() => {
+    const fallbackFromApi = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+      : null;
     const defaultUrl = window.location.port === '5173'
       ? `${window.location.protocol}//${window.location.hostname}:5000`
-      : window.location.origin;
+      : fallbackFromApi || window.location.origin;
     const url = import.meta.env.VITE_SOCKET_URL || defaultUrl;
-    const s = io(url);
+    const s = io(url, { withCredentials: true, transports: ['websocket', 'polling'] });
     setSocket(s);
     s.on('presence', (ids) => setOnlineUserIds(ids));
     return () => s.disconnect();

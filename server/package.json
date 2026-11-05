@@ -10,6 +10,9 @@
     "seed": "node seed/seedData.js",
     "seed:csv": "node seed/importCsv.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
