@@ -75,6 +75,8 @@ class EmailUtils {
         ? process.env.BREVO_PASS
         : null);
 
+    const isProduction = process.env.NODE_ENV === "production";
+
     if (isProduction && brevoApiKey) {
       try {
         const response = await fetch("https://api.brevo.com/v3/smtp/email", {
