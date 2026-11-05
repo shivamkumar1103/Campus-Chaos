@@ -2,6 +2,12 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
 const EmailUtils = require('../utils/emailUtils');
+const AppError = require('../utils/AppError');
+
+const getPrimaryClientUrl = () => {
+  const raw = process.env.CLIENT_URL || 'http://localhost:5173';
+  return raw.split(',')[0].trim().replace(/\/+$/, '');
+};
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET || 'dev_secret', {
@@ -25,22 +31,16 @@ const toPublicUser = (u) => ({
 // Public signup: ALWAYS student, validates @nie.ac.in and classKey, sends verification email
 const registerStudent = async ({ name, email, password, usn, department, classKey }) => {
   if (!name || !email || !password) {
-    const err = new Error('Name, college email and password are required.');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('Name, college email and password are required.', 400);
   }
 
   const trimmedEmail = email.toLowerCase().trim();
   if (!COLLEGE_EMAIL_REGEX.test(trimmedEmail)) {
-    const err = new Error('Only official college email ending with @nie.ac.in is allowed.');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('Only official college email ending with @nie.ac.in is allowed.', 400);
   }
 
   if (!classKey || !classKey.trim()) {
-    const err = new Error('Class section (e.g. CSE-5C) is required.');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('Class section (e.g. CSE-5C) is required.', 400);
   }
 
   const formattedClass = classKey.trim().toUpperCase();
@@ -51,9 +51,7 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
 
   if (existingUser) {
     if (existingUser.isVerified) {
-      const err = new Error('Email already registered');
-      err.statusCode = 400;
-      throw err;
+      throw new AppError('Email already registered', 400);
     }
 
     // User signed up before but never verified: update credentials and resend link
@@ -66,7 +64,7 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
     const rawToken = existingUser.createEmailVerificationToken();
     await existingUser.save();
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = getPrimaryClientUrl();
     const verificationUrl = `${clientUrl}/verify-email?token=${rawToken}`;
     console.log(`\n🔗 [EMAIL VERIFICATION LINK] (${existingUser.email}):\n${verificationUrl}\n`);
 
@@ -74,9 +72,7 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
       await new EmailUtils(existingUser, verificationUrl).sendVerificationEmail();
     } catch (emailErr) {
       console.error('Failed to send verification email:', emailErr);
-      const err = new Error('Account updated, but failed to send verification email. Please try resending verification.');
-      err.statusCode = 500;
-      throw err;
+      throw new AppError('Account updated, but failed to send verification email. Please try resending verification.', 500, true);
     }
 
     return {
@@ -101,7 +97,7 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
   const rawToken = user.createEmailVerificationToken();
   await user.save();
 
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  const clientUrl = getPrimaryClientUrl();
   const verificationUrl = `${clientUrl}/verify-email?token=${rawToken}`;
   console.log(`\n🔗 [EMAIL VERIFICATION LINK] (${user.email}):\n${verificationUrl}\n`);
 
@@ -109,9 +105,7 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
     await new EmailUtils(user, verificationUrl).sendVerificationEmail();
   } catch (emailErr) {
     console.error('Failed to send verification email:', emailErr);
-    const err = new Error('Account created, but failed to send verification email. Please try resending verification.');
-    err.statusCode = 500;
-    throw err;
+    throw new AppError('Account created, but failed to send verification email. Please try resending verification.', 500, true);
   }
 
   return {
@@ -124,18 +118,14 @@ const registerStudent = async ({ name, email, password, usn, department, classKe
 // Verify user email by token
 const verifyEmail = async (token) => {
   if (!token) {
-    const err = new Error('Verification token is required');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('Verification token is required', 400);
   }
 
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
   const user = await userRepository.findByVerificationToken(hashedToken);
 
   if (!user) {
-    const err = new Error('Verification link is invalid or has expired');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('Verification link is invalid or has expired', 400);
   }
 
   user.isVerified = true;
@@ -153,30 +143,24 @@ const verifyEmail = async (token) => {
 // Resend verification email
 const resendVerificationEmail = async (email) => {
   if (!email) {
-    const err = new Error('Email is required');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('Email is required', 400);
   }
 
   const normalizedEmail = email.toLowerCase().trim();
   const user = await userRepository.findByEmail(normalizedEmail);
 
   if (!user) {
-    const err = new Error('No account found with this email address');
-    err.statusCode = 404;
-    throw err;
+    throw new AppError('No account found with this email address', 404);
   }
 
   if (user.isVerified) {
-    const err = new Error('This account is already verified. Please log in.');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('This account is already verified. Please log in.', 400);
   }
 
   const rawToken = user.createEmailVerificationToken();
   await user.save();
 
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  const clientUrl = getPrimaryClientUrl();
   const verificationUrl = `${clientUrl}/verify-email?token=${rawToken}`;
   console.log(`\n🔗 [EMAIL VERIFICATION LINK] (${user.email}):\n${verificationUrl}\n`);
 
@@ -190,27 +174,20 @@ const resendVerificationEmail = async (email) => {
 
 const login = async ({ email, password }) => {
   if (!email || !password) {
-    const err = new Error('email and password are required');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('email and password are required', 400);
   }
   const user = await userRepository.findByEmail(email, true);
   if (!user) {
-    const err = new Error('Invalid credentials');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('Invalid credentials', 400);
   }
   const match = await user.comparePassword(password);
   if (!match) {
-    const err = new Error('Invalid credentials');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('Invalid credentials', 400);
   }
 
   // Check email verification status
   if (user.isVerified === false) {
-    const err = new Error('Please verify your email before logging in. Check your inbox for the verification link.');
-    err.statusCode = 403;
+    const err = new AppError('Please verify your email before logging in. Check your inbox for the verification link.', 403);
     err.requiresVerification = true;
     err.email = user.email;
     throw err;
@@ -225,20 +202,14 @@ const ADMIN_CREATABLE_ROLES = ['student', 'teacher', 'cr', 'admin'];
 
 const createUserByAdmin = async ({ name, email, password, role, usn, department, classKey }) => {
   if (!name || !email || !password || !role) {
-    const err = new Error('name, email, password and role are required');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('name, email, password and role are required', 400);
   }
   if (!ADMIN_CREATABLE_ROLES.includes(role)) {
-    const err = new Error(`Invalid role. Allowed: ${ADMIN_CREATABLE_ROLES.join(', ')}`);
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(`Invalid role. Allowed: ${ADMIN_CREATABLE_ROLES.join(', ')}`, 400);
   }
   const exists = await userRepository.findByEmail(email);
   if (exists) {
-    const err = new Error('Email already registered');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('Email already registered', 400);
   }
   const user = await userRepository.create({
     name: name.trim(),

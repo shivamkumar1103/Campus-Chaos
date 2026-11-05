@@ -1,4 +1,5 @@
 const roomRepository = require('../repositories/roomRepository');
+const AppError = require('../utils/AppError');
 
 // Helper for checking slot overlap: start < s.end && end > s.start
 const hasOverlap = (sStart, sEnd, targetStart, targetEnd) => {
@@ -167,29 +168,21 @@ const getMyBookings = async (userId) => {
 
 const bookRoom = async ({ roomId, start, end, purpose }, user) => {
   if (!roomId || !start || !end) {
-    const err = new Error('roomId, start, end required');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('roomId, start, end required', 400);
   }
 
   if (start >= end) {
-    const err = new Error('End time must be after start time');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('End time must be after start time', 400);
   }
 
   const room = await roomRepository.findRoomById(roomId);
   if (!room) {
-    const err = new Error('Room not found');
-    err.statusCode = 404;
-    throw err;
+    throw new AppError('Room not found', 404);
   }
 
   // Auditorium restriction: only admin can book
   if (room.type === 'auditorium' && user?.role !== 'admin') {
-    const err = new Error('The Auditorium can only be booked by Campus Administrators.');
-    err.statusCode = 403;
-    throw err;
+    throw new AppError('The Auditorium can only be booked by Campus Administrators.', 403);
   }
 
   const now = new Date();
@@ -237,9 +230,7 @@ const bookRoom = async ({ roomId, start, end, purpose }, user) => {
   });
 
   if (conflictingTimetable || conflictingBooking) {
-    const err = new Error('Room is already occupied at this time');
-    err.statusCode = 409;
-    throw err;
+    throw new AppError('Room is already occupied at this time', 409);
   }
 
   // Create the booking
@@ -262,9 +253,7 @@ const bookRoom = async ({ roomId, start, end, purpose }, user) => {
 const cancelBooking = async (bookingId, user) => {
   const booking = await roomRepository.findBookingById(bookingId);
   if (!booking) {
-    const err = new Error('Booking not found');
-    err.statusCode = 404;
-    throw err;
+    throw new AppError('Booking not found', 404);
   }
 
   // Only the person who booked it can cancel, or admin
@@ -272,9 +261,7 @@ const cancelBooking = async (bookingId, user) => {
     booking.bookedBy.toString() !== user._id.toString() &&
     user.role !== 'admin'
   ) {
-    const err = new Error('Not authorized to cancel this booking');
-    err.statusCode = 403;
-    throw err;
+    throw new AppError('Not authorized to cancel this booking', 403);
   }
 
   await roomRepository.deleteBooking(booking);
@@ -283,37 +270,27 @@ const cancelBooking = async (bookingId, user) => {
 
 const cancelTimetableSlot = async (timetableId, user) => {
   if (!timetableId) {
-    const err = new Error('timetableId required');
-    err.statusCode = 400;
-    throw err;
+    throw new AppError('timetableId required', 400);
   }
 
   const entry = await roomRepository.findTimetableById(timetableId);
   if (!entry) {
-    const err = new Error('Timetable entry not found');
-    err.statusCode = 404;
-    throw err;
+    throw new AppError('Timetable entry not found', 404);
   }
 
   // Role-based access control
   if (user.role === 'cr') {
     // CR can only cancel their own classKey
     if (entry.classKey !== user.classKey) {
-      const err = new Error('You can only cancel your own class');
-      err.statusCode = 403;
-      throw err;
+      throw new AppError('You can only cancel your own class', 403);
     }
   } else if (user.role === 'teacher') {
     // Teacher can only cancel their own slots
     if (entry.teacherId.toString() !== user._id.toString()) {
-      const err = new Error('You can only cancel your own classes');
-      err.statusCode = 403;
-      throw err;
+      throw new AppError('You can only cancel your own classes', 403);
     }
   } else if (user.role !== 'admin') {
-    const err = new Error('Not authorized');
-    err.statusCode = 403;
-    throw err;
+    throw new AppError('Not authorized', 403);
   }
 
   // Create a cancel booking entry

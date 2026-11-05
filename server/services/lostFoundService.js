@@ -1,4 +1,5 @@
 const lostFoundRepository = require('../repositories/lostFoundRepository');
+const AppError = require('../utils/AppError');
 
 const getItems = async ({ q, type, category, status }) => {
   const filter = {};
@@ -13,9 +14,7 @@ const getItems = async ({ q, type, category, status }) => {
 const getItemById = async (id) => {
   const item = await lostFoundRepository.findById(id);
   if (!item) {
-    const err = new Error('Item not found');
-    err.statusCode = 404;
-    throw err;
+    throw new AppError('Item not found', 404);
   }
   return item;
 };
@@ -37,9 +36,7 @@ const createItem = async ({ title, description, type, category, location, locati
 const claimItem = async (id, userId, claimProof) => {
   const item = await lostFoundRepository.findById(id);
   if (!item) {
-    const err = new Error('Item not found');
-    err.statusCode = 404;
-    throw err;
+    throw new AppError('Item not found', 404);
   }
 
   item.claimantId = userId;
@@ -51,18 +48,14 @@ const claimItem = async (id, userId, claimProof) => {
 const updateStatus = async (id, user, status) => {
   const item = await lostFoundRepository.findById(id);
   if (!item) {
-    const err = new Error('Item not found');
-    err.statusCode = 404;
-    throw err;
+    throw new AppError('Item not found', 404);
   }
 
   const reporterId = item.reportedBy?._id ? item.reportedBy._id.toString() : item.reportedBy?.toString();
   const isOwner = reporterId === user._id.toString();
 
   if (!isOwner && user.role !== 'admin') {
-    const err = new Error('Only reporter or admin can update status');
-    err.statusCode = 403;
-    throw err;
+    throw new AppError('Only reporter or admin can update status', 403);
   }
 
   item.status = status;
@@ -72,18 +65,14 @@ const updateStatus = async (id, user, status) => {
 const deleteItem = async (id, user) => {
   const item = await lostFoundRepository.findById(id);
   if (!item) {
-    const err = new Error('Item not found');
-    err.statusCode = 404;
-    throw err;
+    throw new AppError('Item not found', 404);
   }
 
   const reporterId = item.reportedBy?._id ? item.reportedBy._id.toString() : item.reportedBy?.toString();
   const isOwner = reporterId === user._id.toString();
 
   if (!isOwner && user.role !== 'admin') {
-    const err = new Error('Only reporter or admin can delete');
-    err.statusCode = 403;
-    throw err;
+    throw new AppError('Only reporter or admin can delete', 403);
   }
 
   await item.deleteOne();

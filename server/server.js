@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 const { initChatSocket } = require('./sockets/chatSocket');
@@ -16,25 +17,31 @@ const messageRoutes = require('./routes/messageRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const pollRoutes = require('./routes/pollRoutes');
+const AppError = require('./utils/AppError');
+const globalErrorHandler = require('./controllers/errorController');
 
 const app = express();
 app.set('trust proxy', 1); // Trust reverse proxy (Render, Railway, Heroku) for secure cookies
 
 const clientUrls = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
-  .map((u) => u.trim());
+  .map((u) => u.trim().replace(/\/+$/, ''));
 
 const corsOptions = {
   origin: (origin, callback) => {
+    // Allow non-browser requests (Postman, curl, server-to-server)
     if (!origin) return callback(null, true);
-    if (
-      clientUrls.includes(origin) ||
-      /\.vercel\.app$/.test(origin) ||
-      origin.includes('localhost')
-    ) {
+
+    const isExplicitlyAllowed = clientUrls.includes(origin);
+    const isVercelDomain = origin.endsWith('.vercel.app');
+    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+
+    if (isExplicitlyAllowed || isVercelDomain || isLocalhost) {
       return callback(null, true);
     }
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
+
+    console.warn(`[CORS] Request blocked from origin: ${origin}`);
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -47,12 +54,17 @@ app.set('io', io);
 
 const PORT = process.env.PORT || 5000;
 
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(uploadsDir));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'campus-chaos-server', time: new Date().toISOString() });
@@ -65,6 +77,14 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/polls', pollRoutes);
+
+// Unhandled routes
+app.all('*', (req, res, next) => {
+  next(new AppError(`Cannot find ${req.originalUrl} on this server!`, 404));
+});
+
+// Global error handling middleware
+app.use(globalErrorHandler);
 
 initChatSocket(io);
 

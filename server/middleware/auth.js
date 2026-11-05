@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const AppError = require('../utils/AppError');
+const catchAsync = require('../utils/catchAsync');
 
 const COOKIE_NAME = process.env.COOKIE_NAME || 'cc_token';
 
@@ -14,57 +16,43 @@ const getTokenFromRequest = (req) => {
   return null;
 };
 
-const protect = async (req, res, next) => {
+const protect = catchAsync(async (req, res, next) => {
   const token = getTokenFromRequest(req);
   if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no authentication token provided' });
+    return next(new AppError('Not authorized, no authentication token provided', 401));
   }
 
-  try {
-    // 1. Verify token signature & expiry
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev_secret');
+  // 1. Verify token signature & expiry (any JWT error will be caught by catchAsync and converted in errorController)
+  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev_secret');
 
-    // 2. Check if user still exists in DB
-    const currentUser = await User.findById(decoded.id).select('+passwordChangedAt');
-    if (!currentUser) {
-      return res.status(401).json({ message: 'The user belonging to this token no longer exists.' });
-    }
-
-    // 3. Check if password was changed after JWT was issued
-    if (currentUser.changedPasswordAfter(decoded.iat)) {
-      return res.status(401).json({
-        message: 'Password was recently changed. Please log in again.',
-        code: 'PASSWORD_CHANGED',
-      });
-    }
-
-    // 4. Check if account email is verified
-    if (currentUser.isVerified === false) {
-      return res.status(403).json({
-        message: 'Please verify your email address to access this resource.',
-        requiresVerification: true,
-        email: currentUser.email,
-      });
-    }
-
-    req.user = currentUser;
-    next();
-  } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Your session has expired. Please log in again.', code: 'TOKEN_EXPIRED' });
-    }
-    if (err.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid authentication token. Please log in again.', code: 'TOKEN_INVALID' });
-    }
-    return res.status(401).json({ message: err.message || 'Authentication failed' });
+  // 2. Check if user still exists in DB
+  const currentUser = await User.findById(decoded.id).select('+passwordChangedAt');
+  if (!currentUser) {
+    return next(new AppError('The user belonging to this token no longer exists.', 401));
   }
-};
+
+  // 3. Check if password was changed after JWT was issued
+  if (currentUser.changedPasswordAfter(decoded.iat)) {
+    return next(new AppError('Password was recently changed. Please log in again.', 401));
+  }
+
+  // 4. Check if account email is verified
+  if (currentUser.isVerified === false) {
+    const error = new AppError('Please verify your email address to access this resource.', 403);
+    error.requiresVerification = true;
+    error.email = currentUser.email;
+    return next(error);
+  }
+
+  req.user = currentUser;
+  next();
+});
 
 const authorize = (...roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.role)) {
-    return res.status(403).json({
-      message: `Access denied. Requires one of roles: [${roles.join(', ')}]`,
-    });
+    return next(
+      new AppError(`Access denied. Requires one of roles: [${roles.join(', ')}]`, 403)
+    );
   }
   next();
 };
