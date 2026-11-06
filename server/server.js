@@ -66,8 +66,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use('/uploads', express.static(uploadsDir));
 
-app.get(['/health', '/api/health'], (req, res) => {
-  res.json({ status: 'ok', service: 'campus-chaos-server', time: new Date().toISOString() });
+app.get(['/', '/health', '/api/health'], (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'campus-chaos-server',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+  
 });
 
 app.use('/api/auth', authRoutes);
